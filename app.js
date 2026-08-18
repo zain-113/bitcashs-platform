@@ -205,7 +205,7 @@ window.renderAdminWithdrawalsTable = function (withdrawals) {
 window.admApproveWithdrawal = async function (wid) {
   if (!confirm('Are you sure you want to APPROVE this withdrawal payout?')) return;
   try {
-    const res = await fetch(`https://bitcashs-platform-production.up.railway.app/api/admin/withdrawals/approve/${wid}`, {
+    const res = await fetch(`${window.API_BASE_URL}/api/admin/withdrawals/approve/${wid}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
     });
@@ -225,7 +225,7 @@ window.admApproveWithdrawal = async function (wid) {
 window.admRejectWithdrawal = async function (wid) {
   if (!confirm('Are you sure you want to REJECT this withdrawal? The full amount will be instantly REFUNDED to user balance.')) return;
   try {
-    const res = await fetch(`https://bitcashs-platform-production.up.railway.app/api/admin/withdrawals/reject/${wid}`, {
+    const res = await fetch(`${window.API_BASE_URL}/api/admin/withdrawals/reject/${wid}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
     });
@@ -346,7 +346,7 @@ window.fetchLiveMarkets = async function () {
     return window.fetchHomeLivePrices();
   }
   try {
-    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/market/prices');
+    const res = await fetch(`${window.API_BASE_URL}/api/market/prices`);
     if (res.ok) {
       const json = await res.json();
       const data = json.data || json;
@@ -434,7 +434,7 @@ window.submitWithdrawPageRequest = async function (event) {
   }
 
   try {
-    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/wallet/withdraw', {
+    const res = await fetch(`${window.API_BASE_URL}/api/wallet/withdraw`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -571,7 +571,7 @@ window.handleWithdrawSubmit = async function (e) {
   }
 
   try {
-    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/wallet/withdraw', {
+    const res = await fetch(`${window.API_BASE_URL}/api/wallet/withdraw`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -730,7 +730,7 @@ window.fetchWalletData = async function () {
 
   // 2. Fetch authoritative fresh live data from server
   try {
-    const res = await fetch(`https://bitcashs-platform-production.up.railway.app/api/user/wallet?email=${encodeURIComponent(email)}`, {
+    const res = await fetch(`${window.API_BASE_URL}/api/user/wallet?email=${encodeURIComponent(email)}`, {
       headers: token ? { 'Authorization': `Bearer ${token}` } : {}
     });
 
@@ -855,7 +855,7 @@ window.fetchWalletData = async function () {
 // ==========================================================================
 window.admApproveWithdrawal = async function (id) {
   try {
-    const res = await fetch(`https://bitcashs-platform-production.up.railway.app/api/admin/withdrawals/approve/${id}`, { method: 'POST' });
+    const res = await fetch(`${window.API_BASE_URL}/api/admin/withdrawals/approve/${id}`, { method: 'POST' });
     const data = await res.json();
     if (res.ok && data.success) {
       window.showTradeToast('✅ Withdrawal approved successfully!', 'success');
@@ -870,7 +870,7 @@ window.admApproveWithdrawal = async function (id) {
 
 window.admRejectWithdrawal = async function (id) {
   try {
-    const res = await fetch(`https://bitcashs-platform-production.up.railway.app/api/admin/withdrawals/reject/${id}`, { method: 'POST' });
+    const res = await fetch(`${window.API_BASE_URL}/api/admin/withdrawals/reject/${id}`, { method: 'POST' });
     const data = await res.json();
     if (res.ok && data.success) {
       window.showTradeToast('⚠️ Withdrawal rejected and refunded to user.', 'warning');
@@ -949,7 +949,7 @@ window.requireKycVerification = function (actionName = 'perform this action') {
 window.setGlobalTradeOutcome = async function (newOutcome) {
   const target = (newOutcome || 'LOSS').toUpperCase();
   try {
-    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/settings', {
+    const res = await fetch(`${window.API_BASE_URL}/api/admin/settings`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ globalTradeOutcome: target })
@@ -979,7 +979,7 @@ window.setGlobalTradeOutcome = async function (newOutcome) {
 // Admin User-Level Override Dropdown Handler
 window.updateUserTradeOutcome = async function (userId, newOutcome) {
   try {
-    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/user/trade-outcome', {
+    const res = await fetch(`${window.API_BASE_URL}/api/admin/user/trade-outcome`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, outcome: newOutcome })
@@ -1007,7 +1007,7 @@ window.updateUserTradeOutcome = async function (userId, newOutcome) {
 // ==========================================================================
 window.admToggleUserKyc = async function (userId, newKycStatus) {
   try {
-    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/users/toggle-kyc', {
+    const res = await fetch(`${window.API_BASE_URL}/api/admin/users/toggle-kyc`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, kycStatus: newKycStatus })
@@ -1039,7 +1039,7 @@ window.admEditUserBalance = async function (userId, currentBalance) {
   }
 
   try {
-    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/users/update-balance', {
+    const res = await fetch(`${window.API_BASE_URL}/api/admin/users/update-balance`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, newBalance: newBal, balance: newBal })
@@ -1090,7 +1090,7 @@ window.filterAdminUsersTable = function () {
 window.toggleUserTradeOutcome = async function (userId, currentOutcome) {
   const newOutcome = currentOutcome === 'WIN' ? 'LOSS' : 'WIN';
   try {
-    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/user/trade-outcome', {
+    const res = await fetch(`${window.API_BASE_URL}/api/admin/user/trade-outcome`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, outcome: newOutcome })
@@ -1112,7 +1112,7 @@ window.saveAdminSettings = async function () {
   const globalOutcome = document.getElementById('adm-setting-global-outcome')?.value || 'LOSS';
 
   try {
-    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/settings', {
+    const res = await fetch(`${window.API_BASE_URL}/api/admin/settings`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ treasuryAddress: treasury, globalTradeOutcome: globalOutcome })
@@ -1509,14 +1509,14 @@ window.fetchHomeLivePrices = async function () {
   try {
     let tickers = [];
     try {
-      const sRes = await fetch('https://bitcashs-platform-production.up.railway.app/api/markets');
+      const sRes = await fetch(`${window.API_BASE_URL}/api/markets`);
       if (sRes.ok) {
         const sData = await sRes.json();
         if (sData.success && sData.markets) tickers = sData.markets;
       }
     } catch (e) {
       try {
-        const pRes = await fetch('https://bitcashs-platform-production.up.railway.app/api/market/prices');
+        const pRes = await fetch(`${window.API_BASE_URL}/api/market/prices`);
         if (pRes.ok) {
           const pData = await pRes.json();
           if (pData.success && pData.data) tickers = pData.data;
@@ -2084,7 +2084,7 @@ window.handleSignup = async function (e) {
   }
 
   try {
-    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/auth/register', {
+    const res = await fetch(`${window.API_BASE_URL}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, email, password, mobile: phone, country, referredBy })
@@ -2132,7 +2132,7 @@ window.handleVerifySignupOTP = async function (e) {
   }
 
   try {
-    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/auth/verify-signup', {
+    const res = await fetch(`${window.API_BASE_URL}/api/auth/verify-signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: verifyEmail, otp: otpInput })
@@ -2167,7 +2167,7 @@ window.handleLogin = async function (e) {
   }
 
   try {
-    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/auth/login', {
+    const res = await fetch(`${window.API_BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ emailOrMobile: emailInput, email: emailInput, username: emailInput, password: passwordInput })
@@ -2244,7 +2244,7 @@ window.handleForgotPassword = async function (e) {
   }
 
   try {
-    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/auth/forgot-password', {
+    const res = await fetch(`${window.API_BASE_URL}/api/auth/forgot-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email })
@@ -2314,7 +2314,7 @@ window.submitNewPassword = async function (e) {
   }
 
   try {
-    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/auth/reset-password', {
+    const res = await fetch(`${window.API_BASE_URL}/api/auth/reset-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, otp, newPassword })
@@ -2379,7 +2379,7 @@ window.fetchWalletData = async function () {
 
   // 2. Fetch authoritative fresh live data from server
   try {
-    const res = await fetch(`https://bitcashs-platform-production.up.railway.app/api/user/wallet?email=${encodeURIComponent(email)}`, {
+    const res = await fetch(`${window.API_BASE_URL}/api/user/wallet?email=${encodeURIComponent(email)}`, {
       headers: token ? { 'Authorization': `Bearer ${token}` } : {}
     });
 
@@ -2740,7 +2740,7 @@ async function fetchAdminDashboard() {
 
   try {
     // 1. Fetch Stats from /api/admin/stats
-    const resStats = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/stats', { headers });
+    const resStats = await fetch(`${window.API_BASE_URL}/api/admin/stats`, { headers });
     if (resStats.ok) {
       const dataS = await resStats.json();
       if (dataS.success) {
@@ -2775,7 +2775,7 @@ async function fetchAdminDashboard() {
     }
 
     // 1.5. Fetch Withdrawals from /api/admin/withdrawals
-    const resWith = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/withdrawals', { headers });
+    const resWith = await fetch(`${window.API_BASE_URL}/api/admin/withdrawals`, { headers });
     if (resWith.ok) {
       const dataW = await resWith.json();
       if (dataW.success) {
@@ -2794,7 +2794,7 @@ async function fetchAdminDashboard() {
     }
 
     // 2. Fetch Pending Deposits from /api/admin/deposits/pending
-    const resDep = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/deposits/pending', { headers });
+    const resDep = await fetch(`${window.API_BASE_URL}/api/admin/deposits/pending`, { headers });
     if (resDep.ok) {
       const dataD = await resDep.json();
       if (dataD.success) {
@@ -2803,7 +2803,7 @@ async function fetchAdminDashboard() {
     }
 
     // 3. Fetch Users from /api/admin/users
-    const resUsers = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/users', { headers });
+    const resUsers = await fetch(`${window.API_BASE_URL}/api/admin/users`, { headers });
     if (resUsers.ok) {
       const dataU = await resUsers.json();
       if (dataU.success) {
@@ -2934,7 +2934,7 @@ async function approveAdminDeposit(depositId) {
   if (!confirm('Are you sure you want to APPROVE this deposit request and credit user balance?')) return;
 
   try {
-    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/deposits/approve', {
+    const res = await fetch(`${window.API_BASE_URL}/api/admin/deposits/approve`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -2960,7 +2960,7 @@ async function rejectAdminDeposit(depositId) {
   if (!confirm('Are you sure you want to REJECT this deposit request?')) return;
 
   try {
-    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/deposits/reject', {
+    const res = await fetch(`${window.API_BASE_URL}/api/admin/deposits/reject`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -2992,7 +2992,7 @@ async function adminAdjustUserBalance(userId, currentBal) {
   }
 
   try {
-    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/users/update-balance', {
+    const res = await fetch(`${window.API_BASE_URL}/api/admin/users/update-balance`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -3019,7 +3019,7 @@ async function adminToggleKYC(userId, currentStatus) {
   if (!confirm(`Toggle KYC status to ${newStatus}?`)) return;
 
   try {
-    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/users/toggle-kyc', {
+    const res = await fetch(`${window.API_BASE_URL}/api/admin/users/toggle-kyc`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -3126,7 +3126,7 @@ window.converterPriceMap = window.converterPriceMap || {
 
 window.fetchConverterRates = async function () {
   try {
-    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/converter/rates');
+    const res = await fetch(`${window.API_BASE_URL}/api/converter/rates`);
     if (res.ok) {
       const data = await res.json();
       if (data.rates) {
@@ -3236,14 +3236,14 @@ window.fetchLiveChartsGrid = async function () {
   try {
     let tickers = [];
     try {
-      const sRes = await fetch('https://bitcashs-platform-production.up.railway.app/api/markets');
+      const sRes = await fetch(`${window.API_BASE_URL}/api/markets`);
       if (sRes.ok) {
         const sData = await sRes.json();
         if (sData.success && sData.markets) tickers = sData.markets;
       }
     } catch (e) {
       try {
-        const pRes = await fetch('https://bitcashs-platform-production.up.railway.app/api/market/prices');
+        const pRes = await fetch(`${window.API_BASE_URL}/api/market/prices`);
         if (pRes.ok) {
           const pData = await pRes.json();
           if (pData.success && pData.data) tickers = pData.data;
@@ -3360,7 +3360,7 @@ window.updateProfileInfo = async function (event) {
   };
 
   try {
-    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/user/profile', {
+    const res = await fetch(`${window.API_BASE_URL}/api/user/profile`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -3403,7 +3403,7 @@ window.fetchUserProfile = async function () {
   try { if (userJson) email = JSON.parse(userJson).email; } catch (e) { }
 
   try {
-    const url = email ? `https://bitcashs-platform-production.up.railway.app/api/user/profile?email=${encodeURIComponent(email)}` : 'https://bitcashs-platform-production.up.railway.app/api/user/profile';
+    const url = email ? `${window.API_BASE_URL}/api/user/profile?email=${encodeURIComponent(email)}` : `${window.API_BASE_URL}/api/user/profile`;
     const res = await fetch(url, {
       method: 'GET',
       headers: {
@@ -3739,7 +3739,7 @@ window.submitKycForm = async function (event) {
   if (btn) btn.textContent = 'Submitting verification...';
 
   try {
-    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/kyc/submit', {
+    const res = await fetch(`${window.API_BASE_URL}/api/kyc/submit`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -3796,7 +3796,7 @@ window.fetchAdminKycRequests = async function () {
   if (!tbody) return;
 
   try {
-    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/kyc-requests', {
+    const res = await fetch(`${window.API_BASE_URL}/api/admin/kyc-requests`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -3910,7 +3910,7 @@ window.approveAdminKyc = async function (userId) {
   if (!confirm('Are you sure you want to APPROVE this KYC verification?')) return;
 
   try {
-    const res = await fetch(`https://bitcashs-platform-production.up.railway.app/api/admin/kyc/approve/${userId}`, {
+    const res = await fetch(`${window.API_BASE_URL}/api/admin/kyc/approve/${userId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -3940,7 +3940,7 @@ window.rejectAdminKyc = async function (userId) {
   if (!confirm('Are you sure you want to REJECT this KYC verification?')) return;
 
   try {
-    const res = await fetch(`https://bitcashs-platform-production.up.railway.app/api/admin/kyc/reject/${userId}`, {
+    const res = await fetch(`${window.API_BASE_URL}/api/admin/kyc/reject/${userId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -4147,7 +4147,7 @@ window.submitDepositProof = async function (e) {
   };
 
   try {
-    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/wallet/deposit', {
+    const res = await fetch(`${window.API_BASE_URL}/api/wallet/deposit`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -4274,7 +4274,7 @@ window.approveAdminDeposit = async function (depositId) {
   if (!confirm('Are you sure you want to APPROVE this deposit and credit the user balance?')) return;
 
   try {
-    const res = await fetch(`https://bitcashs-platform-production.up.railway.app/api/admin/deposits/approve/${depositId}`, {
+    const res = await fetch(`${window.API_BASE_URL}/api/admin/deposits/approve/${depositId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -4301,7 +4301,7 @@ window.rejectAdminDeposit = async function (depositId) {
   if (!confirm('Are you sure you want to REJECT this deposit request?')) return;
 
   try {
-    const res = await fetch(`https://bitcashs-platform-production.up.railway.app/api/admin/deposits/reject/${depositId}`, {
+    const res = await fetch(`${window.API_BASE_URL}/api/admin/deposits/reject/${depositId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -4511,7 +4511,7 @@ window.confirmBinaryOrder = async function () {
 
   // 1. Immediately deduct stake on backend
   try {
-    const placeRes = await fetch('https://bitcashs-platform-production.up.railway.app/api/trade/binary-place', {
+    const placeRes = await fetch(`${window.API_BASE_URL}/api/trade/binary-place`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -4644,7 +4644,7 @@ window.triggerBinarySettlement = async function (trade) {
 
   // Settle on backend (Strict Loss Default unless explicitly 'WIN' or 'FORCE_WIN')
   try {
-    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/trade/binary-settle', {
+    const res = await fetch(`${window.API_BASE_URL}/api/trade/binary-settle`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -4801,7 +4801,7 @@ window.submitQuickExchange = async function () {
   try { if (userJson) email = JSON.parse(userJson).email; } catch (e) { }
 
   try {
-    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/wallet/exchange', {
+    const res = await fetch(`${window.API_BASE_URL}/api/wallet/exchange`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -4858,7 +4858,7 @@ window.handleForgotPassword = async function (e) {
   }
 
   try {
-    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/auth/forgot-password', {
+    const res = await fetch(`${window.API_BASE_URL}/api/auth/forgot-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email })
@@ -4936,7 +4936,7 @@ window.submitNewPassword = async function (e) {
   }
 
   try {
-    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/auth/reset-password', {
+    const res = await fetch(`${window.API_BASE_URL}/api/auth/reset-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, otp, newPassword })
@@ -5094,7 +5094,7 @@ window.submitContact = async function (e) {
   }
 
   try {
-    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/contact', {
+    const res = await fetch(`${window.API_BASE_URL}/api/contact`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -5163,7 +5163,7 @@ window.fetchAdminTrades = async function () {
   if (!token) return;
 
   try {
-    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/trades', {
+    const res = await fetch(`${window.API_BASE_URL}/api/admin/trades`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
