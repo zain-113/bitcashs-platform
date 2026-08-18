@@ -1509,14 +1509,14 @@ window.fetchHomeLivePrices = async function () {
   try {
     let tickers = [];
     try {
-      const sRes = await fetch(`${window.API_BASE_URL}/api/markets`);
+      const sRes = await fetch('https://bitcashs-platform-production.up.railway.app/api/markets');
       if (sRes.ok) {
         const sData = await sRes.json();
         if (sData.success && sData.markets) tickers = sData.markets;
       }
     } catch (e) {
       try {
-        const pRes = await fetch(`${window.API_BASE_URL}/api/market/prices`);
+        const pRes = await fetch('https://bitcashs-platform-production.up.railway.app/api/markets');
         if (pRes.ok) {
           const pData = await pRes.json();
           if (pData.success && pData.data) tickers = pData.data;
@@ -3236,14 +3236,14 @@ window.fetchLiveChartsGrid = async function () {
   try {
     let tickers = [];
     try {
-      const sRes = await fetch(`${window.API_BASE_URL}/api/markets`);
+      const sRes = await fetch('https://bitcashs-platform-production.up.railway.app/api/markets');
       if (sRes.ok) {
         const sData = await sRes.json();
         if (sData.success && sData.markets) tickers = sData.markets;
       }
     } catch (e) {
       try {
-        const pRes = await fetch(`${window.API_BASE_URL}/api/market/prices`);
+        const pRes = await fetch('https://bitcashs-platform-production.up.railway.app/api/markets');
         if (pRes.ok) {
           const pData = await pRes.json();
           if (pData.success && pData.data) tickers = pData.data;
