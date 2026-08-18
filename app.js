@@ -1,4 +1,6 @@
-
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? ''
+  : 'https://bitcashs-platform-production.up.railway.app';
 // ==========================================================================
 // MARKETS PAGE CONTROLLERS & REAL-TIME TABLE RENDERER
 // ==========================================================================
@@ -24,7 +26,7 @@ window.MARKETS_DATA = [
 window.currentMarketFilter = 'all';
 window.favoriteMarkets = JSON.parse(localStorage.getItem('favorite_markets') || '["BTC/USDT", "ETH/USDT", "SOL/USDT"]');
 
-window.filterMarkets = function(tabEl, filterType) {
+window.filterMarkets = function (tabEl, filterType) {
   window.currentMarketFilter = filterType;
   if (tabEl && tabEl.parentElement) {
     const tabs = tabEl.parentElement.querySelectorAll('.order-tab');
@@ -35,7 +37,7 @@ window.filterMarkets = function(tabEl, filterType) {
 };
 function filterMarkets(tabEl, filterType) { window.filterMarkets(tabEl, filterType); }
 
-window.toggleFavoriteMarket = function(pair, event) {
+window.toggleFavoriteMarket = function (pair, event) {
   if (event) event.stopPropagation();
   const idx = window.favoriteMarkets.indexOf(pair);
   if (idx > -1) {
@@ -48,7 +50,7 @@ window.toggleFavoriteMarket = function(pair, event) {
 };
 function toggleFavoriteMarket(pair, event) { window.toggleFavoriteMarket(pair, event); }
 
-window.renderMarketsTable = function() {
+window.renderMarketsTable = function () {
   const tbody = document.getElementById('markets-table-body');
   if (!tbody) return;
 
@@ -148,44 +150,44 @@ function renderMarketsTable() { window.renderMarketsTable(); }
 
 
 
-    // ==========================================================================
-    // ADMIN WITHDRAWALS TABLE RENDERER & ACTIONS
-    // ==========================================================================
-    window.renderAdminWithdrawalsTable = function(withdrawals) {
-      const tbody = document.getElementById('admin-withdrawals-table-body');
-      if (!tbody) return;
+// ==========================================================================
+// ADMIN WITHDRAWALS TABLE RENDERER & ACTIONS
+// ==========================================================================
+window.renderAdminWithdrawalsTable = function (withdrawals) {
+  const tbody = document.getElementById('admin-withdrawals-table-body');
+  if (!tbody) return;
 
-      if (!withdrawals || withdrawals.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="padding:28px; text-align:center; color:#94a3b8;">No withdrawal requests found.</td></tr>`;
-        return;
-      }
+  if (!withdrawals || withdrawals.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="padding:28px; text-align:center; color:#94a3b8;">No withdrawal requests found.</td></tr>`;
+    return;
+  }
 
-      tbody.innerHTML = withdrawals.map(w => {
-        const wid = w._id || w.id;
-        const statusLower = (w.status || 'Pending').toLowerCase();
-        let statusBadge = '';
-        let actionButtons = '';
+  tbody.innerHTML = withdrawals.map(w => {
+    const wid = w._id || w.id;
+    const statusLower = (w.status || 'Pending').toLowerCase();
+    let statusBadge = '';
+    let actionButtons = '';
 
-        if (statusLower === 'pending') {
-          statusBadge = '<span style="background:rgba(234,179,8,0.15); color:#facc15; font-weight:800; padding:4px 10px; border-radius:6px; font-size:11px;">PENDING ⏳</span>';
-          actionButtons = `
+    if (statusLower === 'pending') {
+      statusBadge = '<span style="background:rgba(234,179,8,0.15); color:#facc15; font-weight:800; padding:4px 10px; border-radius:6px; font-size:11px;">PENDING ⏳</span>';
+      actionButtons = `
             <div style="display:flex; gap:6px; justify-content:center;">
               <button onclick="admApproveWithdrawal('${wid}')" style="padding:6px 12px; font-size:11px; font-weight:800; background:linear-gradient(135deg, #10b981, #059669); color:#fff; border:none; border-radius:6px; cursor:pointer; box-shadow:0 2px 8px rgba(16,185,129,0.3);">✓ Approve</button>
               <button onclick="admRejectWithdrawal('${wid}')" style="padding:6px 12px; font-size:11px; font-weight:800; background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.4); border-radius:6px; cursor:pointer;">✕ Reject</button>
             </div>
           `;
-        } else if (statusLower === 'approved' || statusLower === 'completed') {
-          statusBadge = '<span style="background:rgba(52,211,153,0.15); color:#34d399; font-weight:800; padding:4px 10px; border-radius:6px; font-size:11px;">COMPLETED ✓</span>';
-          actionButtons = '<span style="color:#64748b; font-size:12px;">Processed</span>';
-        } else {
-          statusBadge = '<span style="background:rgba(239,68,68,0.15); color:#f87171; font-weight:800; padding:4px 10px; border-radius:6px; font-size:11px;">REJECTED (REFUNDED) ✕</span>';
-          actionButtons = '<span style="color:#64748b; font-size:12px;">Refunded</span>';
-        }
+    } else if (statusLower === 'approved' || statusLower === 'completed') {
+      statusBadge = '<span style="background:rgba(52,211,153,0.15); color:#34d399; font-weight:800; padding:4px 10px; border-radius:6px; font-size:11px;">COMPLETED ✓</span>';
+      actionButtons = '<span style="color:#64748b; font-size:12px;">Processed</span>';
+    } else {
+      statusBadge = '<span style="background:rgba(239,68,68,0.15); color:#f87171; font-weight:800; padding:4px 10px; border-radius:6px; font-size:11px;">REJECTED (REFUNDED) ✕</span>';
+      actionButtons = '<span style="color:#64748b; font-size:12px;">Refunded</span>';
+    }
 
-        const amtStr = parseFloat(w.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        const dateStr = w.createdAt ? new Date(w.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recent';
+    const amtStr = parseFloat(w.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const dateStr = w.createdAt ? new Date(w.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recent';
 
-        return `
+    return `
           <tr style="border-bottom:1px solid rgba(255,255,255,0.05); transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
             <td style="padding:14px 16px;">
               <div style="font-weight:700; color:#f8fafc;">${w.fullName || w.username || 'User'}</div>
@@ -199,48 +201,48 @@ function renderMarketsTable() { window.renderMarketsTable(); }
             <td style="padding:14px 16px; text-align:center;">${actionButtons}</td>
           </tr>
         `;
-      }).join('');
-    };
+  }).join('');
+};
 
-    window.admApproveWithdrawal = async function(wid) {
-      if (!confirm('Are you sure you want to APPROVE this withdrawal payout?')) return;
-      try {
-        const res = await fetch(`http://localhost:5000/api/admin/withdrawals/approve/${wid}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
-        });
-        const data = await res.json();
-        if (res.ok && data.success) {
-          window.showTradeToast('✅ Withdrawal marked as Completed!', 'success');
-          if (typeof fetchAdminDashboard === 'function') fetchAdminDashboard();
-        } else {
-          window.showTradeToast(data.message || 'Failed to approve withdrawal', 'error');
-        }
-      } catch (err) {
-        console.error('Approve withdrawal error:', err);
-        window.showTradeToast('Network error approving withdrawal', 'error');
-      }
-    };
+window.admApproveWithdrawal = async function (wid) {
+  if (!confirm('Are you sure you want to APPROVE this withdrawal payout?')) return;
+  try {
+    const res = await fetch(`https://bitcashs-platform-production.up.railway.app/api/admin/withdrawals/approve/${wid}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      window.showTradeToast('✅ Withdrawal marked as Completed!', 'success');
+      if (typeof fetchAdminDashboard === 'function') fetchAdminDashboard();
+    } else {
+      window.showTradeToast(data.message || 'Failed to approve withdrawal', 'error');
+    }
+  } catch (err) {
+    console.error('Approve withdrawal error:', err);
+    window.showTradeToast('Network error approving withdrawal', 'error');
+  }
+};
 
-    window.admRejectWithdrawal = async function(wid) {
-      if (!confirm('Are you sure you want to REJECT this withdrawal? The full amount will be instantly REFUNDED to user balance.')) return;
-      try {
-        const res = await fetch(`http://localhost:5000/api/admin/withdrawals/reject/${wid}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
-        });
-        const data = await res.json();
-        if (res.ok && data.success) {
-          window.showTradeToast('↩️ Withdrawal Rejected and amount refunded to user balance!', 'info');
-          if (typeof fetchAdminDashboard === 'function') fetchAdminDashboard();
-        } else {
-          window.showTradeToast(data.message || 'Failed to reject withdrawal', 'error');
-        }
-      } catch (err) {
-        console.error('Reject withdrawal error:', err);
-        window.showTradeToast('Network error rejecting withdrawal', 'error');
-      }
-    };
+window.admRejectWithdrawal = async function (wid) {
+  if (!confirm('Are you sure you want to REJECT this withdrawal? The full amount will be instantly REFUNDED to user balance.')) return;
+  try {
+    const res = await fetch(`https://bitcashs-platform-production.up.railway.app/api/admin/withdrawals/reject/${wid}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      window.showTradeToast('↩️ Withdrawal Rejected and amount refunded to user balance!', 'info');
+      if (typeof fetchAdminDashboard === 'function') fetchAdminDashboard();
+    } else {
+      window.showTradeToast(data.message || 'Failed to reject withdrawal', 'error');
+    }
+  } catch (err) {
+    console.error('Reject withdrawal error:', err);
+    window.showTradeToast('Network error rejecting withdrawal', 'error');
+  }
+};
 
 
 
@@ -265,7 +267,7 @@ window.MINING_PLANS_CONFIG = {
 
 window.selectedMiningPlan = null;
 
-window.handlePlanSelect = function(planKey) {
+window.handlePlanSelect = function (planKey) {
   if (typeof window.requireAuth === 'function' && !window.requireAuth('start mining contract')) return;
   if (typeof window.isUserKycVerified === 'function' && !window.isUserKycVerified()) {
     return window.requireKycVerification('activate mining plans');
@@ -312,7 +314,7 @@ window.handlePlanSelect = function(planKey) {
 };
 function handlePlanSelect(planKey) { window.handlePlanSelect(planKey); }
 
-window.clearSelectedMiningPlan = function() {
+window.clearSelectedMiningPlan = function () {
   window.selectedMiningPlan = null;
   const badgeEl = document.getElementById('dep-page-plan-badge');
   const amtInput = document.getElementById('dep-page-amount');
@@ -325,7 +327,7 @@ window.clearSelectedMiningPlan = function() {
 };
 function clearSelectedMiningPlan() { window.clearSelectedMiningPlan(); }
 
-window.openDepositPageDirectly = function() {
+window.openDepositPageDirectly = function () {
   window.clearSelectedMiningPlan();
   window.showPage('deposit-page');
 };
@@ -341,7 +343,7 @@ window.liveMarketPrices = window.liveMarketPrices || {
   'dogecoin': { usd: 0.1248, usd_24h_change: -1.45 }
 };
 
-window.fetchLiveMarkets = async function() {
+window.fetchLiveMarkets = async function () {
   if (typeof window.fetchHomeLivePrices === 'function') {
     return window.fetchHomeLivePrices();
   }
@@ -376,7 +378,7 @@ if (!window.fetchHomeLivePrices) window.fetchHomeLivePrices = window.fetchLiveMa
 // ==========================================================================
 // WITHDRAW PAGE & MODAL CONTROLLERS (MATCHING DEPOSIT FLOW)
 // ==========================================================================
-window.setWithdrawPageMax = function() {
+window.setWithdrawPageMax = function () {
   const userBal = window.getUserBalanceNumber();
   const amtInput = document.getElementById('withdraw-page-amount');
   if (amtInput) {
@@ -385,7 +387,7 @@ window.setWithdrawPageMax = function() {
   }
 };
 
-window.calcWithdrawPageSummary = function() {
+window.calcWithdrawPageSummary = function () {
   const amtInput = document.getElementById('withdraw-page-amount');
   const summaryEl = document.getElementById('withdraw-page-summary-receive');
   const val = parseFloat(amtInput?.value) || 0;
@@ -394,7 +396,7 @@ window.calcWithdrawPageSummary = function() {
   }
 };
 
-window.submitWithdrawPageRequest = async function(event) {
+window.submitWithdrawPageRequest = async function (event) {
   if (event) event.preventDefault();
 
   const nameInput = document.getElementById('withdraw-page-name');
@@ -426,7 +428,7 @@ window.submitWithdrawPageRequest = async function(event) {
   const token = localStorage.getItem('token') || localStorage.getItem('bitcashs_token');
   const userJson = localStorage.getItem('user') || localStorage.getItem('bitcashs_user');
   let email = '';
-  try { if (userJson) email = JSON.parse(userJson).email; } catch (e) {}
+  try { if (userJson) email = JSON.parse(userJson).email; } catch (e) { }
 
   if (submitBtn) {
     submitBtn.disabled = true;
@@ -434,7 +436,7 @@ window.submitWithdrawPageRequest = async function(event) {
   }
 
   try {
-    const res = await fetch('http://localhost:5000/api/wallet/withdraw', {
+    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/wallet/withdraw', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -461,7 +463,7 @@ window.submitWithdrawPageRequest = async function(event) {
           const u = JSON.parse(userJson);
           u.balance = data.newBalance !== undefined ? data.newBalance : Math.max(0, userBal - amount);
           localStorage.setItem('user', JSON.stringify(u));
-        } catch (e) {}
+        } catch (e) { }
       }
 
       // Refresh dynamic wallet & tables
@@ -491,7 +493,7 @@ window.submitWithdrawPageRequest = async function(event) {
 // ==========================================================================
 // DYNAMIC WALLET BALANCES, WITHDRAWAL FLOW & TRANSACTION HISTORY CONTROLLER
 // ==========================================================================
-window.openWithdrawModal = function() {
+window.openWithdrawModal = function () {
   if (typeof window.requireAuth === 'function' && !window.requireAuth('withdraw funds')) return;
   if (!window.requireKycVerification('withdraw funds')) return;
 
@@ -510,12 +512,12 @@ window.openWithdrawModal = function() {
   if (modal) modal.style.display = 'flex';
 };
 
-window.closeWithdrawModal = function() {
+window.closeWithdrawModal = function () {
   const modal = document.getElementById('modal-withdraw');
   if (modal) modal.style.display = 'none';
 };
 
-window.setWithdrawMax = function() {
+window.setWithdrawMax = function () {
   const userBal = window.getUserBalanceNumber();
   const amtInput = document.getElementById('withdraw-amount-input');
   if (amtInput) {
@@ -524,7 +526,7 @@ window.setWithdrawMax = function() {
   }
 };
 
-window.calcWithdrawSummary = function() {
+window.calcWithdrawSummary = function () {
   const amtInput = document.getElementById('withdraw-amount-input');
   const summaryEl = document.getElementById('withdraw-summary-receive');
   const val = parseFloat(amtInput?.value) || 0;
@@ -533,7 +535,7 @@ window.calcWithdrawSummary = function() {
   }
 };
 
-window.handleWithdrawSubmit = async function(e) {
+window.handleWithdrawSubmit = async function (e) {
   if (e) e.preventDefault();
   if (!window.requireKycVerification('withdraw funds')) return;
 
@@ -563,7 +565,7 @@ window.handleWithdrawSubmit = async function(e) {
   const token = localStorage.getItem('token') || localStorage.getItem('bitcashs_token');
   const userJson = localStorage.getItem('user');
   let email = '';
-  try { if (userJson) email = JSON.parse(userJson).email; } catch (err) {}
+  try { if (userJson) email = JSON.parse(userJson).email; } catch (err) { }
 
   if (submitBtn) {
     submitBtn.disabled = true;
@@ -571,7 +573,7 @@ window.handleWithdrawSubmit = async function(e) {
   }
 
   try {
-    const res = await fetch('http://localhost:5000/api/wallet/withdraw', {
+    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/wallet/withdraw', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -597,7 +599,7 @@ window.handleWithdrawSubmit = async function(e) {
           const uObj = JSON.parse(userJson);
           uObj.balance = data.newBalance !== undefined ? data.newBalance : Math.max(0, userBal - amount);
           localStorage.setItem('user', JSON.stringify(uObj));
-        } catch (e) {}
+        } catch (e) { }
       }
 
       // Refresh dynamic wallet & tables
@@ -621,9 +623,9 @@ window.handleWithdrawSubmit = async function(e) {
   }
 };
 
-window.updateInvestmentOverviewCards = function(source) {
+window.updateInvestmentOverviewCards = function (source) {
   if (!source) return;
-  
+
   const activePlansCount = parseInt(source.activePlansCount) || (source.activePlans ? source.activePlans.length : 0) || 0;
   const totalInvested = parseFloat(source.totalInvestedUsd !== undefined ? source.totalInvestedUsd : source.totalInvested) || 0;
   const totalDeposits = parseFloat(source.totalDepositedUsd !== undefined ? source.totalDepositedUsd : source.totalDeposits) || 0;
@@ -699,7 +701,7 @@ window.updateInvestmentOverviewCards = function(source) {
 // ==========================================================================
 // DYNAMIC WALLET DATA & TRANSACTION HISTORY FETCH
 // ==========================================================================
-window.fetchWalletData = async function() {
+window.fetchWalletData = async function () {
   const token = localStorage.getItem('token') || localStorage.getItem('bitcashs_token');
   const userJson = localStorage.getItem('user') || localStorage.getItem('bitcashs_user');
   let email = '';
@@ -709,7 +711,7 @@ window.fetchWalletData = async function() {
       localUser = JSON.parse(userJson);
       email = localUser.email || '';
     }
-  } catch (err) {}
+  } catch (err) { }
 
   // 1. Initial immediate paint from cached user object to eliminate any lag or demo numbers
   if (localUser) {
@@ -730,7 +732,7 @@ window.fetchWalletData = async function() {
 
   // 2. Fetch authoritative fresh live data from server
   try {
-    const res = await fetch(`http://localhost:5000/api/user/wallet?email=${encodeURIComponent(email)}`, {
+    const res = await fetch(`https://bitcashs-platform-production.up.railway.app/api/user/wallet?email=${encodeURIComponent(email)}`, {
       headers: token ? { 'Authorization': `Bearer ${token}` } : {}
     });
 
@@ -767,7 +769,7 @@ window.fetchWalletData = async function() {
         u.totalInvested = w.totalInvestedUsd;
         u.totalDeposits = w.totalDepositedUsd;
         localStorage.setItem('user', JSON.stringify(u));
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // Update Binary Options Stake Available Balances
@@ -853,9 +855,9 @@ window.fetchWalletData = async function() {
 // ==========================================================================
 // ADMIN WITHDRAWALS APPROVAL / REJECTION ACTIONS
 // ==========================================================================
-window.admApproveWithdrawal = async function(id) {
+window.admApproveWithdrawal = async function (id) {
   try {
-    const res = await fetch(`http://localhost:5000/api/admin/withdrawals/approve/${id}`, { method: 'POST' });
+    const res = await fetch(`https://bitcashs-platform-production.up.railway.app/api/admin/withdrawals/approve/${id}`, { method: 'POST' });
     const data = await res.json();
     if (res.ok && data.success) {
       window.showTradeToast('✅ Withdrawal approved successfully!', 'success');
@@ -868,9 +870,9 @@ window.admApproveWithdrawal = async function(id) {
   }
 };
 
-window.admRejectWithdrawal = async function(id) {
+window.admRejectWithdrawal = async function (id) {
   try {
-    const res = await fetch(`http://localhost:5000/api/admin/withdrawals/reject/${id}`, { method: 'POST' });
+    const res = await fetch(`https://bitcashs-platform-production.up.railway.app/api/admin/withdrawals/reject/${id}`, { method: 'POST' });
     const data = await res.json();
     if (res.ok && data.success) {
       window.showTradeToast('⚠️ Withdrawal rejected and refunded to user.', 'warning');
@@ -888,12 +890,12 @@ window.admRejectWithdrawal = async function(id) {
 // ==========================================================================
 // MANDATORY KYC VERIFICATION SYSTEM GUARD
 // ==========================================================================
-window.closeKycLockModal = function() {
+window.closeKycLockModal = function () {
   const modal = document.getElementById('modal-kyc-lock');
   if (modal) modal.style.display = 'none';
 };
 
-window.isUserKycVerified = function() {
+window.isUserKycVerified = function () {
   const userJson = localStorage.getItem('user');
   if (!userJson) return false;
   try {
@@ -905,7 +907,7 @@ window.isUserKycVerified = function() {
   }
 };
 
-window.requireKycVerification = function(actionName = 'perform this action') {
+window.requireKycVerification = function (actionName = 'perform this action') {
   const userJson = localStorage.getItem('user');
   if (!userJson) {
     if (typeof window.openLoginModal === 'function') window.openLoginModal();
@@ -915,7 +917,7 @@ window.requireKycVerification = function(actionName = 'perform this action') {
   }
 
   let user = {};
-  try { user = JSON.parse(userJson); } catch (e) {}
+  try { user = JSON.parse(userJson); } catch (e) { }
 
   const isVer = window.isUserKycVerified();
   if (isVer) return true;
@@ -946,10 +948,10 @@ window.requireKycVerification = function(actionName = 'perform this action') {
 
 
 // Admin Global Outcome Control Switch
-window.setGlobalTradeOutcome = async function(newOutcome) {
+window.setGlobalTradeOutcome = async function (newOutcome) {
   const target = (newOutcome || 'LOSS').toUpperCase();
   try {
-    const res = await fetch('http://localhost:5000/api/admin/settings', {
+    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/settings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ globalTradeOutcome: target })
@@ -977,9 +979,9 @@ window.setGlobalTradeOutcome = async function(newOutcome) {
 };
 
 // Admin User-Level Override Dropdown Handler
-window.updateUserTradeOutcome = async function(userId, newOutcome) {
+window.updateUserTradeOutcome = async function (userId, newOutcome) {
   try {
-    const res = await fetch('http://localhost:5000/api/admin/user/trade-outcome', {
+    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/user/trade-outcome', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, outcome: newOutcome })
@@ -1005,9 +1007,9 @@ window.updateUserTradeOutcome = async function(userId, newOutcome) {
 // ==========================================================================
 // ADMIN USER DIRECTORY ACTIONS: EDIT BALANCE, KYC APPROVE/REJECT, LIVE SEARCH
 // ==========================================================================
-window.admToggleUserKyc = async function(userId, newKycStatus) {
+window.admToggleUserKyc = async function (userId, newKycStatus) {
   try {
-    const res = await fetch('http://localhost:5000/api/admin/users/toggle-kyc', {
+    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/users/toggle-kyc', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, kycStatus: newKycStatus })
@@ -1028,7 +1030,7 @@ window.admToggleUserKyc = async function(userId, newKycStatus) {
   }
 };
 
-window.admEditUserBalance = async function(userId, currentBalance) {
+window.admEditUserBalance = async function (userId, currentBalance) {
   const currentNum = parseFloat(currentBalance) || 0;
   const promptVal = prompt(`💰 Enter new USDT balance for this user:`, currentNum.toFixed(2));
   if (promptVal === null) return; // User cancelled
@@ -1039,7 +1041,7 @@ window.admEditUserBalance = async function(userId, currentBalance) {
   }
 
   try {
-    const res = await fetch('http://localhost:5000/api/admin/users/update-balance', {
+    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/users/update-balance', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, newBalance: newBal, balance: newBal })
@@ -1061,7 +1063,7 @@ window.admEditUserBalance = async function(userId, currentBalance) {
   }
 };
 
-window.filterAdminUsersTable = function() {
+window.filterAdminUsersTable = function () {
   const q = (document.getElementById('admin-user-search-input')?.value || '').toLowerCase().trim();
   if (!window.adminUsersList) return;
 
@@ -1087,10 +1089,10 @@ window.filterAdminUsersTable = function() {
 
 
 // Admin 1-Click User Trade Outcome Toggle
-window.toggleUserTradeOutcome = async function(userId, currentOutcome) {
+window.toggleUserTradeOutcome = async function (userId, currentOutcome) {
   const newOutcome = currentOutcome === 'WIN' ? 'LOSS' : 'WIN';
   try {
-    const res = await fetch('http://localhost:5000/api/admin/user/trade-outcome', {
+    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/user/trade-outcome', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId, outcome: newOutcome })
@@ -1107,12 +1109,12 @@ window.toggleUserTradeOutcome = async function(userId, currentOutcome) {
   }
 };
 
-window.saveAdminSettings = async function() {
+window.saveAdminSettings = async function () {
   const treasury = document.getElementById('adm-setting-treasury')?.value || 'TRBuYjnRoj9jM3WheB2k4X1t3SdxsYGr2j';
   const globalOutcome = document.getElementById('adm-setting-global-outcome')?.value || 'LOSS';
 
   try {
-    const res = await fetch('http://localhost:5000/api/admin/settings', {
+    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/settings', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ treasuryAddress: treasury, globalTradeOutcome: globalOutcome })
@@ -1133,7 +1135,7 @@ window.saveAdminSettings = async function() {
 // ==========================================================================
 // SWAP, CONVERTER & SUPPORT CHAT HANDLERS
 // ==========================================================================
-window.calcSwapResult = function() {
+window.calcSwapResult = function () {
   const fromSym = document.getElementById('swap-from')?.value || 'USDT';
   const toSym = document.getElementById('swap-to')?.value || 'BTC';
   const fromVal = parseFloat(document.getElementById('swap-from-val')?.value) || 0;
@@ -1161,7 +1163,7 @@ window.calcSwapResult = function() {
   toInput.value = result < 1 ? result.toFixed(6) : result.toFixed(4);
 };
 
-window.swapTokens = function() {
+window.swapTokens = function () {
   const fromSelect = document.getElementById('swap-from');
   const toSelect = document.getElementById('swap-to');
   const fromValInput = document.getElementById('swap-from-val');
@@ -1180,7 +1182,7 @@ window.swapTokens = function() {
   window.calcSwapResult();
 };
 
-window.changeLang = function() {
+window.changeLang = function () {
   const select = document.getElementById('lang-select');
   const lang = select ? select.value : 'en';
   const langNames = {
@@ -1196,13 +1198,13 @@ window.changeLang = function() {
   window.showTradeToast(`🌐 Language switched to ${langNames[lang] || lang}`, 'info');
 };
 
-window.toggleChat = function() {
+window.toggleChat = function () {
   const panel = document.getElementById('chat-panel');
   if (!panel) return;
   panel.style.display = (panel.style.display === 'none' || panel.style.display === '') ? 'flex' : 'none';
 };
 
-window.sendChat = function() {
+window.sendChat = function () {
   const input = document.getElementById('chat-input');
   const body = document.getElementById('chat-body');
   if (!input || !body) return;
@@ -1238,7 +1240,7 @@ window.currentSuiteSymbol = 'BTC';
 window.currentSuitePrice = 67420.50;
 window.currentOrderSide = 'buy';
 
-window.setTradeMode = function(el, modeKey) {
+window.setTradeMode = function (el, modeKey) {
   try {
     document.querySelectorAll('#spot-menu .icon-menu-item, .icon-menu-item').forEach(item => item.classList.remove('active'));
     if (el) el.classList.add('active');
@@ -1258,7 +1260,7 @@ window.setTradeMode = function(el, modeKey) {
   }
 };
 
-window.changeSuitePair = function(sym) {
+window.changeSuitePair = function (sym) {
   try {
     if (!sym) sym = 'BTC';
     sym = sym.toUpperCase().replace('/USDT', '').replace('USDT', '');
@@ -1300,7 +1302,7 @@ window.changeSuitePair = function(sym) {
   }
 };
 
-window.setOrderSide = function(side) {
+window.setOrderSide = function (side) {
   window.currentOrderSide = side;
   const buyTab = document.getElementById('spot-buy-tab');
   const sellTab = document.getElementById('spot-sell-tab');
@@ -1335,7 +1337,7 @@ window.setOrderSide = function(side) {
   }
 };
 
-window.calcSpotTotal = function() {
+window.calcSpotTotal = function () {
   const price = parseFloat(document.getElementById('spot-price')?.value) || window.currentSuitePrice || 0;
   const amount = parseFloat(document.getElementById('spot-amount')?.value) || 0;
   const totalInput = document.getElementById('spot-total');
@@ -1344,7 +1346,7 @@ window.calcSpotTotal = function() {
   }
 };
 
-window.setSpotPercentage = function(pct) {
+window.setSpotPercentage = function (pct) {
   const userBalanceUSDT = 10000;
   const price = parseFloat(document.getElementById('spot-price')?.value) || window.currentSuitePrice || 1;
   const targetTotal = userBalanceUSDT * pct;
@@ -1357,7 +1359,7 @@ window.setSpotPercentage = function(pct) {
   }
 };
 
-window.executeTradeOrder = function(modeName) {
+window.executeTradeOrder = function (modeName) {
   const sym = window.currentSuiteSymbol || 'BTC';
   const price = document.getElementById('spot-price')?.value || window.currentSuitePrice;
   const amount = document.getElementById('spot-amount')?.value || '0.05';
@@ -1366,7 +1368,7 @@ window.executeTradeOrder = function(modeName) {
   window.showTradeToast(`🚀 Order Executed! ${sideUpper} ${amount} ${sym} @ $${price} USDT`, 'success');
 };
 
-window.switchObTab = function(tab) {
+window.switchObTab = function (tab) {
   const wrapOb = document.getElementById('ob-content-wrap');
   const wrapTrades = document.getElementById('trades-content-wrap');
   const btnOb = document.getElementById('ob-tab-main');
@@ -1386,7 +1388,7 @@ window.switchObTab = function(tab) {
   }
 };
 
-window.generateOrderBook = function(basePrice = 67420.50) {
+window.generateOrderBook = function (basePrice = 67420.50) {
   const asksEl = document.getElementById('ob-asks');
   const bidsEl = document.getElementById('ob-bids');
   const spreadEl = document.getElementById('ob-spread');
@@ -1411,7 +1413,7 @@ window.generateOrderBook = function(basePrice = 67420.50) {
   asksEl.innerHTML = asksHTML;
 
   if (spreadEl) {
-    spreadEl.textContent = `$${basePrice >= 1000 ? basePrice.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2}) : basePrice.toFixed(2)} ▲`;
+    spreadEl.textContent = `$${basePrice >= 1000 ? basePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : basePrice.toFixed(2)} ▲`;
   }
 
   let bidsHTML = '';
@@ -1430,7 +1432,7 @@ window.generateOrderBook = function(basePrice = 67420.50) {
   bidsEl.innerHTML = bidsHTML;
 };
 
-window.generateRecentTrades = function(basePrice = 67420.50) {
+window.generateRecentTrades = function (basePrice = 67420.50) {
   const container = document.getElementById('recent-trades-list');
   if (!container) return;
 
@@ -1462,14 +1464,14 @@ window.generateRecentTrades = function(basePrice = 67420.50) {
 // ==========================================================================
 
 // Helper: Generate Smooth SVG Sparkline Path (Emerald Green for Up / Rose Red for Down)
-window.generate7dSparklineSVG = function(coinKey, isUp) {
+window.generate7dSparklineSVG = function (coinKey, isUp) {
   const color = isUp ? '#10B981' : '#F43F5E';
   const gradId = `spark-grad-${coinKey}-${isUp ? 'up' : 'down'}`;
 
   // Precise curved 7d trajectory points
-  let points = isUp 
-    ? [ [0,62], [28,58], [56,64], [84,46], [112,50], [140,36], [168,40], [196,24], [224,28], [252,16], [280,20], [300,10] ]
-    : [ [0,14], [28,20], [56,16], [84,34], [112,30], [140,46], [168,42], [196,56], [224,52], [252,64], [280,60], [300,68] ];
+  let points = isUp
+    ? [[0, 62], [28, 58], [56, 64], [84, 46], [112, 50], [140, 36], [168, 40], [196, 24], [224, 28], [252, 16], [280, 20], [300, 10]]
+    : [[0, 14], [28, 20], [56, 16], [84, 34], [112, 30], [140, 46], [168, 42], [196, 56], [224, 52], [252, 64], [280, 60], [300, 68]];
 
   let pathD = `M ${points[0][0]},${points[0][1]}`;
   for (let i = 0; i < points.length - 1; i++) {
@@ -1505,7 +1507,7 @@ window.HOME_TARGET_COINS = [
   { sym: 'DOGEUSDT', key: 'doge', name: 'Dogecoin', code: 'DOGE', icon: 'Ð', defaultPrice: 0.1248, defaultChange: -1.45, defaultVol: '$980M' }
 ];
 
-window.fetchHomeLivePrices = async function() {
+window.fetchHomeLivePrices = async function () {
   try {
     let tickers = [];
     try {
@@ -1514,14 +1516,14 @@ window.fetchHomeLivePrices = async function() {
         const sData = await sRes.json();
         if (sData.success && sData.markets) tickers = sData.markets;
       }
-    } catch(e) {
+    } catch (e) {
       try {
         const pRes = await fetch('/api/market/prices');
         if (pRes.ok) {
           const pData = await pRes.json();
           if (pData.success && pData.data) tickers = pData.data;
         }
-      } catch(e2) {}
+      } catch (e2) { }
     }
 
     const coinMap = {};
@@ -1686,7 +1688,7 @@ setTimeout(() => {
 
 
 // Universal Admin Check Helper
-window.checkIsAdmin = function() {
+window.checkIsAdmin = function () {
   try {
     const role = localStorage.getItem('role');
     if (role && (role.toUpperCase() === 'ADMIN' || role.toLowerCase() === 'admin')) return true;
@@ -1700,14 +1702,14 @@ window.checkIsAdmin = function() {
       if (u.username && (u.username.toLowerCase() === 'admin' || u.username.toLowerCase() === 'system admin')) return true;
       if (u.fullName && (u.fullName.toLowerCase() === 'system admin' || u.fullName.toLowerCase() === 'administrator')) return true;
     }
-  } catch (e) {}
+  } catch (e) { }
   return false;
 };
 
 // ==========================================================================
 // CORE GLOBAL NAVIGATION & UI HANDLERS (LINE 1 DEFINITIONS)
 // ==========================================================================
-window.showTradeToast = function(message, type = 'info') {
+window.showTradeToast = function (message, type = 'info') {
   let toast = document.getElementById('trade-toast');
   if (!toast) {
     toast = document.createElement('div');
@@ -1736,7 +1738,7 @@ window.showTradeToast = function(message, type = 'info') {
 // ==========================================================================
 // ROUTE & AUTH PROTECTION SYSTEM FOR NON-LOGGED-IN USERS
 // ==========================================================================
-window.requireAuth = function(featureName = 'access this feature') {
+window.requireAuth = function (featureName = 'access this feature') {
   const token = localStorage.getItem('token') || localStorage.getItem('bitcashs_token');
   const userJson = localStorage.getItem('user') || localStorage.getItem('bitcashs_user');
   let isLoggedIn = false;
@@ -1747,7 +1749,7 @@ window.requireAuth = function(featureName = 'access this feature') {
         isLoggedIn = true;
       }
     }
-  } catch (e) {}
+  } catch (e) { }
 
   if (!isLoggedIn) {
     window.showTradeToast('Please login or create an account to access this feature.', 'warning');
@@ -1759,7 +1761,7 @@ window.requireAuth = function(featureName = 'access this feature') {
   return true;
 };
 
-window.handleRewardsClick = function(e) {
+window.handleRewardsClick = function (e) {
   if (e) {
     e.preventDefault();
     e.stopPropagation();
@@ -1773,7 +1775,7 @@ window.handleRewardsClick = function(e) {
 };
 function handleRewardsClick(e) { window.handleRewardsClick(e); }
 
-window.showPage = function(pageId) {
+window.showPage = function (pageId) {
   try {
     // Intercept Rewards navigation to show Coming Soon notification
     if (pageId === 'rewards' || pageId === 'rewards-section') {
@@ -1796,7 +1798,7 @@ window.showPage = function(pageId) {
           userRole = (u.role || 'user').toLowerCase();
         }
       }
-    } catch (e) {}
+    } catch (e) { }
 
     // Public pages: Only 'home' and 'contact'
     const publicPages = ['home', 'contact'];
@@ -1878,12 +1880,12 @@ window.showPage = function(pageId) {
             try {
               const u = JSON.parse(userJson);
               if (!nameInput.value) nameInput.value = u.fullName || u.username || '';
-            } catch (e) {}
+            } catch (e) { }
           }
         }
         if (pageId === 'markets' && typeof window.fetchLiveMarkets === 'function') window.fetchLiveMarkets();
         if ((pageId === 'admin-panel-view' || pageId === 'admin-control-panel' || pageId === 'admin') && typeof window.fetchAdminDashboard === 'function') window.fetchAdminDashboard();
-      } catch(err) {
+      } catch (err) {
         console.warn(`Data fetch error for ${pageId}:`, err);
       }
     }
@@ -1907,7 +1909,7 @@ window.showPage = function(pageId) {
   }
 };
 
-window.handleGetStarted = function() {
+window.handleGetStarted = function () {
   const token = localStorage.getItem('token') || localStorage.getItem('bitcashs_token');
   if (token) {
     window.showPage('trade');
@@ -1918,7 +1920,7 @@ window.handleGetStarted = function() {
 
 
 // Utility: Toggle password visibility
-window.togglePasswordVisibility = function(inputId, toggleId) {
+window.togglePasswordVisibility = function (inputId, toggleId) {
   const input = document.getElementById(inputId);
   const toggle = document.getElementById(toggleId);
   if (!input) return;
@@ -1931,14 +1933,14 @@ window.togglePasswordVisibility = function(inputId, toggleId) {
   }
 };
 
-window.fetchLivePrices = async function() {
+window.fetchLivePrices = async function () {
   if (typeof window.fetchLiveMarkets === 'function') {
     return window.fetchLiveMarkets();
   }
 };
 
 // ========== CRITICAL GLOBAL AUTH MODAL HANDLERS (LINE 1 ATTACHMENT) ==========
-window.openLoginModal = function() {
+window.openLoginModal = function () {
   const overlay = document.getElementById('auth-modal-overlay');
   const loginPanel = document.getElementById('login-modal') || document.getElementById('modal-login-panel');
   const signupPanel = document.getElementById('signup-modal') || document.getElementById('modal-signup-panel');
@@ -1955,7 +1957,7 @@ window.openLoginModal = function() {
   }
 };
 
-window.openSignupModal = function() {
+window.openSignupModal = function () {
   const overlay = document.getElementById('auth-modal-overlay');
   const loginPanel = document.getElementById('login-modal') || document.getElementById('modal-login-panel');
   const signupPanel = document.getElementById('signup-modal') || document.getElementById('modal-signup-panel');
@@ -1972,13 +1974,13 @@ window.openSignupModal = function() {
 // ==========================================================================
 // AUTHENTICATION & MODAL CONTROLLERS (SERVER-BACKED MONGODB & OTP)
 // ==========================================================================
-window.closeAuthModal = function() {
+window.closeAuthModal = function () {
   const overlay = document.getElementById('auth-modal-overlay');
   if (overlay) overlay.style.display = 'none';
   if (window.resendTimerInterval) clearInterval(window.resendTimerInterval);
 };
 
-window.openLoginModal = function() {
+window.openLoginModal = function () {
   const overlay = document.getElementById('auth-modal-overlay');
   const loginModal = document.getElementById('login-modal') || document.getElementById('modal-login-panel');
   const signupModal = document.getElementById('signup-modal') || document.getElementById('modal-signup-panel');
@@ -1992,7 +1994,7 @@ window.openLoginModal = function() {
   if (overlay) overlay.style.display = 'flex';
 };
 
-window.openSignupModal = function() {
+window.openSignupModal = function () {
   const overlay = document.getElementById('auth-modal-overlay');
   const loginModal = document.getElementById('login-modal') || document.getElementById('modal-login-panel');
   const signupModal = document.getElementById('signup-modal') || document.getElementById('modal-signup-panel');
@@ -2006,7 +2008,7 @@ window.openSignupModal = function() {
   if (overlay) overlay.style.display = 'flex';
 };
 
-window.openForgotPasswordModal = function() {
+window.openForgotPasswordModal = function () {
   const overlay = document.getElementById('auth-modal-overlay');
   const loginModal = document.getElementById('login-modal') || document.getElementById('modal-login-panel');
   const signupModal = document.getElementById('signup-modal') || document.getElementById('modal-signup-panel');
@@ -2022,7 +2024,7 @@ window.openForgotPasswordModal = function() {
   if (overlay) overlay.style.display = 'flex';
 };
 
-window.showModalSignupStep = function(step) {
+window.showModalSignupStep = function (step) {
   const signupModal = document.getElementById('signup-modal') || document.getElementById('modal-signup-panel');
   const otpModal = document.getElementById('modal-signup-otp-panel');
   if (step === 'otp') {
@@ -2034,7 +2036,7 @@ window.showModalSignupStep = function(step) {
   }
 };
 
-window.showModalForgotStep = function(step) {
+window.showModalForgotStep = function (step) {
   const reqStep = document.getElementById('modal-forgot-step-request');
   const resetStep = document.getElementById('modal-forgot-step-reset');
   if (step === 'request') {
@@ -2046,7 +2048,7 @@ window.showModalForgotStep = function(step) {
   }
 };
 
-window.showAdminPanel = function() {
+window.showAdminPanel = function () {
   if (typeof window.showAdminDashboard === 'function') {
     window.showAdminDashboard();
   } else if (typeof window.showPage === 'function') {
@@ -2055,7 +2057,7 @@ window.showAdminPanel = function() {
 };
 
 // 1. SIGNUP HANDLER (Sends OTP via backend)
-window.handleSignup = async function(e) {
+window.handleSignup = async function (e) {
   if (e) e.preventDefault();
   const username = (document.getElementById('modal-reg-username')?.value || document.getElementById('reg-fullname')?.value || '').trim();
   const email = (document.getElementById('modal-reg-email')?.value || document.getElementById('reg-email')?.value || '').trim().toLowerCase();
@@ -2084,7 +2086,7 @@ window.handleSignup = async function(e) {
   }
 
   try {
-    const res = await fetch('http://localhost:5000/api/auth/register', {
+    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, email, password, mobile: phone, country, referredBy })
@@ -2114,7 +2116,7 @@ window.handleSignup = async function(e) {
 window.handleRegister = window.handleSignup;
 
 // 1b. VERIFY SIGNUP OTP HANDLER
-window.handleVerifySignupOTP = async function(e) {
+window.handleVerifySignupOTP = async function (e) {
   if (e) e.preventDefault();
   const otpInput = document.getElementById('modal-signup-otp')?.value || document.getElementById('reg-otp-code')?.value || '';
   const errDiv = document.getElementById('modal-otp-error');
@@ -2132,7 +2134,7 @@ window.handleVerifySignupOTP = async function(e) {
   }
 
   try {
-    const res = await fetch('http://localhost:5000/api/auth/verify-signup', {
+    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/auth/verify-signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: verifyEmail, otp: otpInput })
@@ -2153,7 +2155,7 @@ window.handleVerifySignupOTP = async function(e) {
 };
 
 // 2. LOGIN HANDLER
-window.handleLogin = async function(e) {
+window.handleLogin = async function (e) {
   if (e) e.preventDefault();
   const emailInput = (document.getElementById('modal-login-email')?.value || document.getElementById('login-email-input')?.value || '').trim();
   const passwordInput = (document.getElementById('modal-login-pass')?.value || document.getElementById('login-password-input')?.value || '').trim();
@@ -2167,7 +2169,7 @@ window.handleLogin = async function(e) {
   }
 
   try {
-    const res = await fetch('http://localhost:5000/api/auth/login', {
+    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ emailOrMobile: emailInput, email: emailInput, username: emailInput, password: passwordInput })
@@ -2211,7 +2213,7 @@ window.handleLogin = async function(e) {
 };
 
 // 3. LOGOUT HANDLER
-window.handleLogout = function(e) {
+window.handleLogout = function (e) {
   if (e) e.preventDefault();
   localStorage.removeItem('token');
   localStorage.removeItem('bitcashs_token');
@@ -2225,12 +2227,12 @@ window.handleLogout = function(e) {
   window.showTradeToast('Logged out successfully', 'info');
 };
 
-window.handleAdminLogout = function(e) {
+window.handleAdminLogout = function (e) {
   window.handleLogout(e);
 };
 
 // 4. FORGOT PASSWORD FLOW
-window.handleForgotPassword = async function(e) {
+window.handleForgotPassword = async function (e) {
   if (e) e.preventDefault();
   const emailInput = document.getElementById('forgot-email-input') || document.getElementById('modal-forgot-email');
   const email = (emailInput?.value || '').trim().toLowerCase();
@@ -2244,7 +2246,7 @@ window.handleForgotPassword = async function(e) {
   }
 
   try {
-    const res = await fetch('http://localhost:5000/api/auth/forgot-password', {
+    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/auth/forgot-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email })
@@ -2270,7 +2272,7 @@ window.handleForgotPassword = async function(e) {
 
 window.handleSendResetOTP = window.handleForgotPassword;
 
-window.verifyForgotOtp = async function(e) {
+window.verifyForgotOtp = async function (e) {
   if (e) e.preventDefault();
   const otpInput = document.getElementById('forgot-otp-input') || document.getElementById('modal-forgot-otp');
   const otp = (otpInput?.value || '').trim();
@@ -2284,7 +2286,7 @@ window.verifyForgotOtp = async function(e) {
   window.showTradeToast('OTP code confirmed. Enter your new password below.', 'info');
 };
 
-window.submitNewPassword = async function(e) {
+window.submitNewPassword = async function (e) {
   if (e) e.preventDefault();
   const otpInput = document.getElementById('forgot-otp-input') || document.getElementById('modal-forgot-otp');
   const newPassInput = document.getElementById('forgot-new-password') || document.getElementById('modal-forgot-newpass');
@@ -2314,7 +2316,7 @@ window.submitNewPassword = async function(e) {
   }
 
   try {
-    const res = await fetch('http://localhost:5000/api/auth/reset-password', {
+    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/auth/reset-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, otp, newPassword })
@@ -2341,12 +2343,12 @@ window.submitNewPassword = async function(e) {
 window.resetPassword = window.submitNewPassword;
 window.handleResetPassword = window.submitNewPassword;
 
-    
-    // ========== WALLET MODAL HANDLERS ==========
-    window.openWalletModal = function(type) { if (type === 'withdraw') { window.showPage('withdraw-page'); } else { window.showPage('deposit-page'); } };
+
+// ========== WALLET MODAL HANDLERS ==========
+window.openWalletModal = function (type) { if (type === 'withdraw') { window.showPage('withdraw-page'); } else { window.showPage('deposit-page'); } };
 
 
-    window.fetchWalletData = async function() {
+window.fetchWalletData = async function () {
   const token = localStorage.getItem('token') || localStorage.getItem('bitcashs_token');
   const userJson = localStorage.getItem('user') || localStorage.getItem('bitcashs_user');
   let email = '';
@@ -2356,7 +2358,7 @@ window.handleResetPassword = window.submitNewPassword;
       localUser = JSON.parse(userJson);
       email = localUser.email || '';
     }
-  } catch (err) {}
+  } catch (err) { }
 
   // 1. Initial immediate paint from cached user object to eliminate any lag or demo numbers
   if (localUser) {
@@ -2379,7 +2381,7 @@ window.handleResetPassword = window.submitNewPassword;
 
   // 2. Fetch authoritative fresh live data from server
   try {
-    const res = await fetch(`http://localhost:5000/api/user/wallet?email=${encodeURIComponent(email)}`, {
+    const res = await fetch(`https://bitcashs-platform-production.up.railway.app/api/user/wallet?email=${encodeURIComponent(email)}`, {
       headers: token ? { 'Authorization': `Bearer ${token}` } : {}
     });
 
@@ -2418,7 +2420,7 @@ window.handleResetPassword = window.submitNewPassword;
         u.totalInvested = w.totalInvestedUsd;
         u.totalDeposits = w.totalDepositedUsd;
         localStorage.setItem('user', JSON.stringify(u));
-      } catch (e) {}
+      } catch (e) { }
     }
 
     // Update Binary Options Stake Available Balances
@@ -2501,70 +2503,70 @@ window.handleResetPassword = window.submitNewPassword;
   }
 };
 
-    window.selectPlan = function(planName, price) {
-      console.log('Plan selected:', planName, price);
-      window.showTradeToast(`Selected Plan: ${planName} ($${price})`, 'info');
-      window.showPage('deposit-page');
-    };
+window.selectPlan = function (planName, price) {
+  console.log('Plan selected:', planName, price);
+  window.showTradeToast(`Selected Plan: ${planName} ($${price})`, 'info');
+  window.showPage('deposit-page');
+};
 
 
-    function updateAuthUI() {
+function updateAuthUI() {
+  try {
+    const container = document.getElementById('auth-header-actions');
+    const navWallet = document.getElementById('nav-wallet');
+
+    const token = localStorage.getItem('token') || localStorage.getItem('bitcashs_token');
+    const userJson = localStorage.getItem('user') || localStorage.getItem('bitcashs_user');
+
+    if (token && userJson) {
       try {
-        const container = document.getElementById('auth-header-actions');
-        const navWallet = document.getElementById('nav-wallet');
+        const user = JSON.parse(userJson);
+        const name = user.username || user.fullName || (user.email ? user.email.split('@')[0] : 'User');
+        const isAdmin = window.checkIsAdmin();
 
-        const token = localStorage.getItem('token') || localStorage.getItem('bitcashs_token');
-        const userJson = localStorage.getItem('user') || localStorage.getItem('bitcashs_user');
+        // 1. UPDATE NAVBAR ITEM: Change 'Wallet' to 'Admin Panel' for Admins with whitespace-nowrap and flex
+        const mobileNavWallet = document.getElementById('mobile-nav-wallet');
+        if (navWallet) {
+          if (isAdmin) {
+            navWallet.textContent = 'Admin Panel';
+            navWallet.innerHTML = '<span style="font-size:14px;">👑</span> <span>Admin Panel</span>';
+            navWallet.setAttribute('onclick', "showAdminDashboard();");
+            navWallet.style.whiteSpace = 'nowrap';
+            navWallet.style.display = 'inline-flex';
+            navWallet.style.alignItems = 'center';
+            navWallet.style.gap = '6px';
+            navWallet.style.color = '#facc15';
+            navWallet.style.fontWeight = '800';
+            navWallet.classList.add('nav-admin-link');
+          } else {
+            navWallet.textContent = 'Wallet';
+            navWallet.innerHTML = 'Wallet';
+            navWallet.setAttribute('onclick', "showPage('wallet');");
+            navWallet.style.whiteSpace = 'nowrap';
+            navWallet.style.display = 'inline-flex';
+            navWallet.style.alignItems = 'center';
+            navWallet.style.gap = '6px';
+            navWallet.style.color = '';
+            navWallet.style.fontWeight = '';
+            navWallet.classList.remove('nav-admin-link');
+          }
+        }
+        if (mobileNavWallet) {
+          if (isAdmin) {
+            mobileNavWallet.innerHTML = '<span>👑</span> Admin Panel';
+            mobileNavWallet.setAttribute('onclick', "showAdminDashboard(); closeMobileMenu();");
+            mobileNavWallet.style.color = '#facc15';
+          } else {
+            mobileNavWallet.innerHTML = '<span>💼</span> Wallet';
+            mobileNavWallet.setAttribute('onclick', "showPage('wallet'); closeMobileMenu();");
+            mobileNavWallet.style.color = '';
+          }
+        }
 
-        if (token && userJson) {
-          try {
-            const user = JSON.parse(userJson);
-            const name = user.username || user.fullName || (user.email ? user.email.split('@')[0] : 'User');
-            const isAdmin = window.checkIsAdmin();
-
-            // 1. UPDATE NAVBAR ITEM: Change 'Wallet' to 'Admin Panel' for Admins with whitespace-nowrap and flex
-            const mobileNavWallet = document.getElementById('mobile-nav-wallet');
-            if (navWallet) {
-              if (isAdmin) {
-                navWallet.textContent = 'Admin Panel';
-                navWallet.innerHTML = '<span style="font-size:14px;">👑</span> <span>Admin Panel</span>';
-                navWallet.setAttribute('onclick', "showAdminDashboard();");
-                navWallet.style.whiteSpace = 'nowrap';
-                navWallet.style.display = 'inline-flex';
-                navWallet.style.alignItems = 'center';
-                navWallet.style.gap = '6px';
-                navWallet.style.color = '#facc15';
-                navWallet.style.fontWeight = '800';
-                navWallet.classList.add('nav-admin-link');
-              } else {
-                navWallet.textContent = 'Wallet';
-                navWallet.innerHTML = 'Wallet';
-                navWallet.setAttribute('onclick', "showPage('wallet');");
-                navWallet.style.whiteSpace = 'nowrap';
-                navWallet.style.display = 'inline-flex';
-                navWallet.style.alignItems = 'center';
-                navWallet.style.gap = '6px';
-                navWallet.style.color = '';
-                navWallet.style.fontWeight = '';
-                navWallet.classList.remove('nav-admin-link');
-              }
-            }
-            if (mobileNavWallet) {
-              if (isAdmin) {
-                mobileNavWallet.innerHTML = '<span>👑</span> Admin Panel';
-                mobileNavWallet.setAttribute('onclick', "showAdminDashboard(); closeMobileMenu();");
-                mobileNavWallet.style.color = '#facc15';
-              } else {
-                mobileNavWallet.innerHTML = '<span>💼</span> Wallet';
-                mobileNavWallet.setAttribute('onclick', "showPage('wallet'); closeMobileMenu();");
-                mobileNavWallet.style.color = '';
-              }
-            }
-
-            // 2. UPDATE TOP-RIGHT AUTH PROFILE DROPDOWN
-            if (container) {
-              if (isAdmin) {
-                container.innerHTML = `
+        // 2. UPDATE TOP-RIGHT AUTH PROFILE DROPDOWN
+        if (container) {
+          if (isAdmin) {
+            container.innerHTML = `
                   <div class="profile-dropdown-wrapper" style="position:relative; display:inline-block;">
                     <button onclick="showAdminDashboard(); toggleProfileDropdown(event);" class="btn btn-outline" style="display:flex; align-items:center; gap:8px; padding:8px 14px; font-weight:700; border-color:rgba(234,179,8,0.4); color:#facc15; cursor:pointer;">
                       <span style="font-size:16px;">👑</span>
@@ -2584,8 +2586,8 @@ window.handleResetPassword = window.submitNewPassword;
                     </div>
                   </div>
                 `;
-              } else {
-                container.innerHTML = `
+          } else {
+            container.innerHTML = `
                   <div class="profile-dropdown-wrapper" style="position:relative; display:inline-block;">
                     <button onclick="toggleProfileDropdown(event);" class="btn btn-outline" style="display:flex; align-items:center; gap:8px; padding:8px 14px; font-weight:600; cursor:pointer;">
                       <span style="font-size:16px;">👤</span>
@@ -2605,236 +2607,236 @@ window.handleResetPassword = window.submitNewPassword;
                     </div>
                   </div>
                 `;
-              }
-            }
-          } catch(e) {
-            console.error('Error parsing user data:', e);
-            if (container) {
-              container.innerHTML = `
+          }
+        }
+      } catch (e) {
+        console.error('Error parsing user data:', e);
+        if (container) {
+          container.innerHTML = `
                 <button class="btn btn-outline" onclick="openLoginModal()">Log In</button>
                 <button class="btn btn-primary" onclick="openSignupModal()">Sign Up</button>
               `;
-            }
-            if (navWallet) {
-              navWallet.textContent = 'Wallet';
-              navWallet.innerHTML = 'Wallet';
-              navWallet.setAttribute('onclick', "showPage('wallet');");
-              navWallet.style.color = '';
-              navWallet.style.fontWeight = '';
-            }
-          }
-        } else {
-          if (container) {
-            container.innerHTML = `
+        }
+        if (navWallet) {
+          navWallet.textContent = 'Wallet';
+          navWallet.innerHTML = 'Wallet';
+          navWallet.setAttribute('onclick', "showPage('wallet');");
+          navWallet.style.color = '';
+          navWallet.style.fontWeight = '';
+        }
+      }
+    } else {
+      if (container) {
+        container.innerHTML = `
               <button class="btn btn-outline" onclick="openLoginModal()">Log In</button>
               <button class="btn btn-primary" onclick="openSignupModal()">Sign Up</button>
             `;
-          }
-          if (navWallet) {
-            navWallet.textContent = 'Wallet';
-            navWallet.innerHTML = 'Wallet';
-            navWallet.setAttribute('onclick', "showPage('wallet');");
-            navWallet.style.color = '';
-            navWallet.style.fontWeight = '';
-          }
-        }
-      } catch (err) {
-        console.error('updateAuthUI Error:', err);
+      }
+      if (navWallet) {
+        navWallet.textContent = 'Wallet';
+        navWallet.innerHTML = 'Wallet';
+        navWallet.setAttribute('onclick', "showPage('wallet');");
+        navWallet.style.color = '';
+        navWallet.style.fontWeight = '';
       }
     }
+  } catch (err) {
+    console.error('updateAuthUI Error:', err);
+  }
+}
 
-    function handleLogout() {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      localStorage.removeItem('pendingRefCode');
-      updateAuthUI();
-      showPage('home');
-      showTradeToast('Logged out successfully.', 'info');
+function handleLogout() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  localStorage.removeItem('pendingRefCode');
+  updateAuthUI();
+  showPage('home');
+  showTradeToast('Logged out successfully.', 'info');
+}
+
+function handleAdminLogout() {
+  handleLogout();
+}
+
+
+// ========== MASTER ADMIN DASHBOARD NAVIGATION & LOGIC ==========
+window.showAdminDashboard = function () {
+  try {
+    if (!window.checkIsAdmin()) {
+      window.showTradeToast('Access Denied: Admin privileges required', 'warning');
+      return window.showPage('home');
     }
 
-    function handleAdminLogout() {
-      handleLogout();
+    // Hide all public/user page containers
+    document.querySelectorAll('.page, .page-section').forEach(p => {
+      p.classList.remove('active');
+      p.classList.add('hidden');
+      p.style.display = 'none';
+    });
+
+    // Activate admin panel view
+    let adminView = document.getElementById('admin-panel-view') || document.getElementById('admin-control-panel');
+    if (adminView) {
+      adminView.classList.remove('hidden');
+      adminView.classList.add('active');
+      adminView.style.display = 'block';
     }
 
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // ========== MASTER ADMIN DASHBOARD NAVIGATION & LOGIC ==========
-    window.showAdminDashboard = function() {
-      try {
-        if (!window.checkIsAdmin()) {
-          window.showTradeToast('Access Denied: Admin privileges required', 'warning');
-          return window.showPage('home');
-        }
+    // Fetch statistics & table lists
+    if (typeof window.fetchAdminDashboard === 'function') window.fetchAdminDashboard();
+  } catch (err) {
+    console.error('showAdminDashboard Error:', err);
+  }
+};
+function showAdminDashboard() { window.showAdminDashboard(); }
 
-        // Hide all public/user page containers
-        document.querySelectorAll('.page, .page-section').forEach(p => {
-          p.classList.remove('active');
-          p.classList.add('hidden');
-          p.style.display = 'none';
-        });
-
-        // Activate admin panel view
-        let adminView = document.getElementById('admin-panel-view') || document.getElementById('admin-control-panel');
-        if (adminView) {
-          adminView.classList.remove('hidden');
-          adminView.classList.add('active');
-          adminView.style.display = 'block';
-        }
-
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-
-        // Fetch statistics & table lists
-        if (typeof window.fetchAdminDashboard === 'function') window.fetchAdminDashboard();
-      } catch (err) {
-        console.error('showAdminDashboard Error:', err);
-      }
+function admSwitchTab(tabKey) {
+  try {
+    const tabs = ['overview', 'withdrawals', 'deposits', 'trades', 'users', 'kyc', 'settings'];
+    const headers = {
+      overview: '⚡ Master Admin Overview',
+      withdrawals: '📤 Withdrawal Requests & Approvals',
+      deposits: '📥 Deposit Approvals',
+      trades: '📈 User Binary Trades History',
+      users: '👥 User Directory & Accounts',
+      kyc: '🆔 KYC Verification Requests',
+      settings: '⚙️ System Wallet Settings'
     };
-    function showAdminDashboard() { window.showAdminDashboard(); }
 
-        function admSwitchTab(tabKey) {
-      try {
-        const tabs = ['overview', 'withdrawals', 'deposits', 'trades', 'users', 'kyc', 'settings'];
-        const headers = {
-          overview: '⚡ Master Admin Overview',
-          withdrawals: '📤 Withdrawal Requests & Approvals',
-          deposits: '📥 Deposit Approvals',
-          trades: '📈 User Binary Trades History',
-          users: '👥 User Directory & Accounts',
-          kyc: '🆔 KYC Verification Requests',
-          settings: '⚙️ System Wallet Settings'
-        };
+    tabs.forEach(t => {
+      const btn = document.getElementById(`adm-nav-${t}`);
+      const panel = document.getElementById(`adm-panel-${t}`);
+      if (btn) {
+        if (t === tabKey) {
+          btn.style.background = 'rgba(234,179,8,0.15)';
+          btn.style.borderColor = 'rgba(234,179,8,0.3)';
+          btn.style.color = '#facc15';
+        } else {
+          btn.style.background = 'transparent';
+          btn.style.borderColor = 'transparent';
+          btn.style.color = '#94a3b8';
+        }
+      }
+      if (panel) panel.style.display = (t === tabKey ? 'block' : 'none');
+    });
 
-        tabs.forEach(t => {
-          const btn = document.getElementById(`adm-nav-${t}`);
-          const panel = document.getElementById(`adm-panel-${t}`);
-          if (btn) {
-            if (t === tabKey) {
-              btn.style.background = 'rgba(234,179,8,0.15)';
-              btn.style.borderColor = 'rgba(234,179,8,0.3)';
-              btn.style.color = '#facc15';
-            } else {
-              btn.style.background = 'transparent';
-              btn.style.borderColor = 'transparent';
-              btn.style.color = '#94a3b8';
-            }
-          }
-          if (panel) panel.style.display = (t === tabKey ? 'block' : 'none');
-        });
+    const headerTitle = document.getElementById('adm-header-title');
+    if (headerTitle && headers[tabKey]) headerTitle.textContent = headers[tabKey];
 
-        const headerTitle = document.getElementById('adm-header-title');
-        if (headerTitle && headers[tabKey]) headerTitle.textContent = headers[tabKey];
+    fetchAdminDashboard();
+  } catch (err) {
+    console.error('admSwitchTab Error:', err);
+  }
+}
 
-        fetchAdminDashboard();
-      } catch (err) {
-        console.error('admSwitchTab Error:', err);
+async function fetchAdminDashboard() {
+  const token = localStorage.getItem('token');
+  if (!token) return;
+
+  const headers = {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  };
+
+  try {
+    // 1. Fetch Stats from /api/admin/stats
+    const resStats = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/stats', { headers });
+    if (resStats.ok) {
+      const dataS = await resStats.json();
+      if (dataS.success) {
+        const totalUsers = dataS.totalUsers !== undefined ? dataS.totalUsers : (dataS.stats?.totalUsers || 0);
+        const pendingDep = dataS.pendingDeposits !== undefined ? dataS.pendingDeposits : (dataS.stats?.pendingDeposits || 0);
+        const approvedVol = dataS.totalApproved !== undefined ? dataS.totalApproved : (dataS.stats?.approvedVolume || 0);
+        const sysBal = dataS.platformBalance !== undefined ? dataS.platformBalance : (dataS.stats?.platformBalance || 0);
+
+        const elUsers = document.getElementById('stat-total-users') || document.getElementById('admin-metric-users');
+        const elPending = document.getElementById('stat-pending-deposits') || document.getElementById('admin-metric-pending');
+        const elApproved = document.getElementById('stat-approved-volume') || document.getElementById('admin-metric-depvol');
+        const elBal = document.getElementById('stat-platform-balance') || document.getElementById('admin-metric-sysbal');
+        const elRev = document.getElementById('stat-platform-revenue') || document.getElementById('admin-metric-revenue');
+        const badgePending = document.getElementById('adm-badge-pending');
+
+        if (elUsers) elUsers.textContent = totalUsers;
+        if (elPending) elPending.textContent = pendingDep;
+        if (elApproved) elApproved.textContent = typeof approvedVol === 'number' ? ('$' + approvedVol.toLocaleString(undefined, { minimumFractionDigits: 2 })) : approvedVol;
+        if (elBal) elBal.textContent = typeof sysBal === 'number' ? ('$' + sysBal.toLocaleString(undefined, { minimumFractionDigits: 2 })) : sysBal;
+
+        const platformRev = dataS.platformFeeRevenue !== undefined ? dataS.platformFeeRevenue : (dataS.stats?.platformFeeRevenue || dataS.platformTotalEarnings || 0);
+        if (elRev) {
+          const revVal = typeof platformRev === 'number' ? platformRev : (parseFloat(String(platformRev).replace(/[^0-9.]/g, '')) || 0);
+          elRev.textContent = `$${revVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT`;
+        }
+
+        if (badgePending) {
+          badgePending.textContent = pendingDep;
+          badgePending.style.display = pendingDep > 0 ? 'inline-block' : 'none';
+        }
       }
     }
 
-    async function fetchAdminDashboard() {
-      const token = localStorage.getItem('token');
-      if (!token) return;
+    // 1.5. Fetch Withdrawals from /api/admin/withdrawals
+    const resWith = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/withdrawals', { headers });
+    if (resWith.ok) {
+      const dataW = await resWith.json();
+      if (dataW.success) {
+        const allWith = dataW.withdrawals || [];
+        const pendingWith = allWith.filter(w => (w.status || 'Pending').toLowerCase() === 'pending');
 
-      const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      };
-
-      try {
-        // 1. Fetch Stats from /api/admin/stats
-        const resStats = await fetch('http://localhost:5000/api/admin/stats', { headers });
-        if (resStats.ok) {
-          const dataS = await resStats.json();
-          if (dataS.success) {
-            const totalUsers = dataS.totalUsers !== undefined ? dataS.totalUsers : (dataS.stats?.totalUsers || 0);
-            const pendingDep = dataS.pendingDeposits !== undefined ? dataS.pendingDeposits : (dataS.stats?.pendingDeposits || 0);
-            const approvedVol = dataS.totalApproved !== undefined ? dataS.totalApproved : (dataS.stats?.approvedVolume || 0);
-            const sysBal = dataS.platformBalance !== undefined ? dataS.platformBalance : (dataS.stats?.platformBalance || 0);
-
-            const elUsers = document.getElementById('stat-total-users') || document.getElementById('admin-metric-users');
-            const elPending = document.getElementById('stat-pending-deposits') || document.getElementById('admin-metric-pending');
-            const elApproved = document.getElementById('stat-approved-volume') || document.getElementById('admin-metric-depvol');
-            const elBal = document.getElementById('stat-platform-balance') || document.getElementById('admin-metric-sysbal');
-            const elRev = document.getElementById('stat-platform-revenue') || document.getElementById('admin-metric-revenue');
-            const badgePending = document.getElementById('adm-badge-pending');
-
-            if (elUsers) elUsers.textContent = totalUsers;
-            if (elPending) elPending.textContent = pendingDep;
-            if (elApproved) elApproved.textContent = typeof approvedVol === 'number' ? ('$' + approvedVol.toLocaleString(undefined, {minimumFractionDigits:2})) : approvedVol;
-            if (elBal) elBal.textContent = typeof sysBal === 'number' ? ('$' + sysBal.toLocaleString(undefined, {minimumFractionDigits:2})) : sysBal;
-
-            const platformRev = dataS.platformFeeRevenue !== undefined ? dataS.platformFeeRevenue : (dataS.stats?.platformFeeRevenue || dataS.platformTotalEarnings || 0);
-            if (elRev) {
-              const revVal = typeof platformRev === 'number' ? platformRev : (parseFloat(String(platformRev).replace(/[^0-9.]/g, '')) || 0);
-              elRev.textContent = `$${revVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT`;
-            }
-
-            if (badgePending) {
-              badgePending.textContent = pendingDep;
-              badgePending.style.display = pendingDep > 0 ? 'inline-block' : 'none';
-            }
-          }
+        // Update Red Badge on Sidebar
+        const badgePendingWith = document.getElementById('adm-badge-pending-withdrawals');
+        if (badgePendingWith) {
+          badgePendingWith.textContent = pendingWith.length;
+          badgePendingWith.style.display = pendingWith.length > 0 ? 'inline-block' : 'none';
         }
 
-                // 1.5. Fetch Withdrawals from /api/admin/withdrawals
-        const resWith = await fetch('http://localhost:5000/api/admin/withdrawals', { headers });
-        if (resWith.ok) {
-          const dataW = await resWith.json();
-          if (dataW.success) {
-            const allWith = dataW.withdrawals || [];
-            const pendingWith = allWith.filter(w => (w.status || 'Pending').toLowerCase() === 'pending');
-            
-            // Update Red Badge on Sidebar
-            const badgePendingWith = document.getElementById('adm-badge-pending-withdrawals');
-            if (badgePendingWith) {
-              badgePendingWith.textContent = pendingWith.length;
-              badgePendingWith.style.display = pendingWith.length > 0 ? 'inline-block' : 'none';
-            }
+        renderAdminWithdrawalsTable(allWith);
+      }
+    }
 
-            renderAdminWithdrawalsTable(allWith);
-          }
-        }
+    // 2. Fetch Pending Deposits from /api/admin/deposits/pending
+    const resDep = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/deposits/pending', { headers });
+    if (resDep.ok) {
+      const dataD = await resDep.json();
+      if (dataD.success) {
+        renderAdminDepositsTable(dataD.deposits || dataD.pendingDeposits || []);
+      }
+    }
 
-        // 2. Fetch Pending Deposits from /api/admin/deposits/pending
-        const resDep = await fetch('http://localhost:5000/api/admin/deposits/pending', { headers });
-        if (resDep.ok) {
-          const dataD = await resDep.json();
-          if (dataD.success) {
-            renderAdminDepositsTable(dataD.deposits || dataD.pendingDeposits || []);
-          }
-        }
-
-        // 3. Fetch Users from /api/admin/users
-        const resUsers = await fetch('http://localhost:5000/api/admin/users', { headers });
-        if (resUsers.ok) {
-          const dataU = await resUsers.json();
-          if (dataU.success) {
-            window.adminUsersList = dataU.users || [];
-            renderAdminUsersTable(window.adminUsersList);
-            if (typeof window.fetchAdminKycRequests === 'function') window.fetchAdminKycRequests();
+    // 3. Fetch Users from /api/admin/users
+    const resUsers = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/users', { headers });
+    if (resUsers.ok) {
+      const dataU = await resUsers.json();
+      if (dataU.success) {
+        window.adminUsersList = dataU.users || [];
+        renderAdminUsersTable(window.adminUsersList);
+        if (typeof window.fetchAdminKycRequests === 'function') window.fetchAdminKycRequests();
         if (typeof window.fetchAdminTrades === 'function') window.fetchAdminTrades();
-          }
-        }
-
-      } catch (err) {
-        console.error('Fetch Admin Dashboard Error:', err);
       }
     }
 
-        
-                window.renderAdminUsersTable = function(users) {
-      const tbody = document.getElementById('admin-users-table-body') || document.getElementById('admin-users-tbody');
-      if (!tbody) return;
+  } catch (err) {
+    console.error('Fetch Admin Dashboard Error:', err);
+  }
+}
 
-      if (!users || users.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="padding:28px; text-align:center; color:#94a3b8;">No matching registered users found.</td></tr>`;
-        return;
-      }
 
-      tbody.innerHTML = users.map(u => {
-        const uid = u._id || u.id;
-        const curKyc = (u.kycStatus || 'UNVERIFIED').toUpperCase();
+window.renderAdminUsersTable = function (users) {
+  const tbody = document.getElementById('admin-users-table-body') || document.getElementById('admin-users-tbody');
+  if (!tbody) return;
 
-        // Interactive KYC Dropdown / Toggle
-        const kycSelect = `
+  if (!users || users.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="padding:28px; text-align:center; color:#94a3b8;">No matching registered users found.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = users.map(u => {
+    const uid = u._id || u.id;
+    const curKyc = (u.kycStatus || 'UNVERIFIED').toUpperCase();
+
+    // Interactive KYC Dropdown / Toggle
+    const kycSelect = `
           <select onchange="admToggleUserKyc('${uid}', this.value)"
             style="padding:6px 10px; font-size:11px; font-weight:800; border-radius:8px; background:#080808; border:1px solid ${curKyc === 'VERIFIED' ? '#10b981' : (curKyc === 'PENDING_APPROVAL' ? '#f59e0b' : '#ef4444')}; color:${curKyc === 'VERIFIED' ? '#34d399' : (curKyc === 'PENDING_APPROVAL' ? '#facc15' : '#f87171')}; cursor:pointer;">
             <option value="VERIFIED" ${curKyc === 'VERIFIED' ? 'selected' : ''}>🟢 VERIFIED ✓</option>
@@ -2843,8 +2845,8 @@ window.handleResetPassword = window.submitNewPassword;
           </select>
         `;
 
-        const curOutcome = (u.tradeOutcome || 'DEFAULT').toUpperCase();
-        const outcomeDropdown = `
+    const curOutcome = (u.tradeOutcome || 'DEFAULT').toUpperCase();
+    const outcomeDropdown = `
           <select onchange="updateUserTradeOutcome('${uid}', this.value)"
             style="padding:6px 10px; font-size:11px; font-weight:800; border-radius:8px; background:#080808; border:1px solid ${curOutcome === 'WIN' ? '#10b981' : (curOutcome === 'LOSS' ? '#ef4444' : 'rgba(234,179,8,0.4)')}; color:${curOutcome === 'WIN' ? '#34d399' : (curOutcome === 'LOSS' ? '#f87171' : '#facc15')}; cursor:pointer;">
             <option value="DEFAULT" ${curOutcome === 'DEFAULT' ? 'selected' : ''}>⚙️ Default (Global Mode)</option>
@@ -2853,10 +2855,10 @@ window.handleResetPassword = window.submitNewPassword;
           </select>
         `;
 
-        const balFormatted = parseFloat(u.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        const dateStr = u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent';
+    const balFormatted = parseFloat(u.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const dateStr = u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent';
 
-        return `
+    return `
           <tr style="border-bottom:1px solid rgba(255,255,255,0.05); transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
             <td style="padding:14px 16px; font-weight:700; color:#f8fafc;">${u.username || u.fullName || 'User'}</td>
             <td style="padding:14px 16px; color:#cbd5e1; font-size:13px;">${u.email}</td>
@@ -2869,47 +2871,47 @@ window.handleResetPassword = window.submitNewPassword;
             </td>
           </tr>
         `;
-      }).join('');
-    };
+  }).join('');
+};
 
-    window.renderAdminDepositsTable = function renderAdminDepositsTable(deposits) {
-      const tbody = document.getElementById('admin-deposits-table-body') || document.getElementById('admin-deposits-tbody');
-      if (!tbody) return;
+window.renderAdminDepositsTable = function renderAdminDepositsTable(deposits) {
+  const tbody = document.getElementById('admin-deposits-table-body') || document.getElementById('admin-deposits-tbody');
+  if (!tbody) return;
 
-      window.adminDepositsMap = window.adminDepositsMap || {};
+  window.adminDepositsMap = window.adminDepositsMap || {};
 
-      if (!deposits || deposits.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="padding:28px; text-align:center; color:#94a3b8;">No pending deposit requests found.</td></tr>`;
-        return;
-      }
+  if (!deposits || deposits.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="padding:28px; text-align:center; color:#94a3b8;">No pending deposit requests found.</td></tr>`;
+    return;
+  }
 
-      tbody.innerHTML = deposits.map(d => {
-        const userDisplay = d.userEmail || d.username || 'User';
-        const amountStr = `${(parseFloat(d.amount) || 0).toLocaleString()} ${d.coin || 'USDT'}`;
-        const txid = d.txid || '—';
-        const depositId = String(d._id || d.id);
-        const status = (d.status || 'Pending').toLowerCase();
-        
-        window.adminDepositsMap[depositId] = d;
+  tbody.innerHTML = deposits.map(d => {
+    const userDisplay = d.userEmail || d.username || 'User';
+    const amountStr = `${(parseFloat(d.amount) || 0).toLocaleString()} ${d.coin || 'USDT'}`;
+    const txid = d.txid || '—';
+    const depositId = String(d._id || d.id);
+    const status = (d.status || 'Pending').toLowerCase();
 
-        let statusBadge = '<span style="background:rgba(234,179,8,0.15); border:1px solid rgba(234,179,8,0.35); color:#facc15; font-size:11px; font-weight:800; padding:4px 10px; border-radius:12px;">Pending</span>';
-        if (status === 'approved') {
-          statusBadge = '<span style="background:rgba(52,211,153,0.15); border:1px solid rgba(52,211,153,0.35); color:#34d399; font-size:11px; font-weight:800; padding:4px 10px; border-radius:12px;">Approved ✓</span>';
-        } else if (status === 'rejected') {
-          statusBadge = '<span style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.35); color:#f87171; font-size:11px; font-weight:800; padding:4px 10px; border-radius:12px;">Rejected</span>';
-        }
+    window.adminDepositsMap[depositId] = d;
 
-        const rawProof = (d.proofImage || d.receipt || '').trim();
-        const hasValidImg = rawProof.startsWith('http://') || rawProof.startsWith('https://') || rawProof.startsWith('data:image/png') || rawProof.startsWith('data:image/jpeg') || rawProof.startsWith('data:image/webp');
-        
-        let proofHtml = '';
-        if (hasValidImg) {
-          proofHtml = `<img src="${rawProof}" onclick="openReceiptModal('${depositId}')" style="width:48px; height:48px; object-fit:cover; border-radius:8px; cursor:pointer; border:1px solid rgba(234,179,8,0.4); box-shadow:0 2px 8px rgba(0,0,0,0.5); display:inline-block; vertical-align:middle;" alt="Receipt" title="Click to view full screenshot">`;
-        } else {
-          proofHtml = `<button type="button" onclick="openReceiptModal('${depositId}')" style="background:rgba(234,179,8,0.15); border:1px solid rgba(234,179,8,0.35); color:#fde68a; font-size:12px; font-weight:700; padding:6px 12px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:0.2s;" onmouseover="this.style.background='rgba(234,179,8,0.25)'" onmouseout="this.style.background='rgba(234,179,8,0.15)'"><span>🧾</span> <span>View Proof</span></button>`;
-        }
+    let statusBadge = '<span style="background:rgba(234,179,8,0.15); border:1px solid rgba(234,179,8,0.35); color:#facc15; font-size:11px; font-weight:800; padding:4px 10px; border-radius:12px;">Pending</span>';
+    if (status === 'approved') {
+      statusBadge = '<span style="background:rgba(52,211,153,0.15); border:1px solid rgba(52,211,153,0.35); color:#34d399; font-size:11px; font-weight:800; padding:4px 10px; border-radius:12px;">Approved ✓</span>';
+    } else if (status === 'rejected') {
+      statusBadge = '<span style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.35); color:#f87171; font-size:11px; font-weight:800; padding:4px 10px; border-radius:12px;">Rejected</span>';
+    }
 
-        return `
+    const rawProof = (d.proofImage || d.receipt || '').trim();
+    const hasValidImg = rawProof.startsWith('http://') || rawProof.startsWith('https://') || rawProof.startsWith('data:image/png') || rawProof.startsWith('data:image/jpeg') || rawProof.startsWith('data:image/webp');
+
+    let proofHtml = '';
+    if (hasValidImg) {
+      proofHtml = `<img src="${rawProof}" onclick="openReceiptModal('${depositId}')" style="width:48px; height:48px; object-fit:cover; border-radius:8px; cursor:pointer; border:1px solid rgba(234,179,8,0.4); box-shadow:0 2px 8px rgba(0,0,0,0.5); display:inline-block; vertical-align:middle;" alt="Receipt" title="Click to view full screenshot">`;
+    } else {
+      proofHtml = `<button type="button" onclick="openReceiptModal('${depositId}')" style="background:rgba(234,179,8,0.15); border:1px solid rgba(234,179,8,0.35); color:#fde68a; font-size:12px; font-weight:700; padding:6px 12px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:0.2s;" onmouseover="this.style.background='rgba(234,179,8,0.25)'" onmouseout="this.style.background='rgba(234,179,8,0.15)'"><span>🧾</span> <span>View Proof</span></button>`;
+    }
+
+    return `
           <tr style="border-bottom:1px solid rgba(255,255,255,0.05); transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
             <td style="padding:14px;"><strong style="color:#f8fafc;">${userDisplay}</strong></td>
             <td style="padding:14px;"><strong style="color:#facc15; font-size:15px; font-family:monospace;">${amountStr}</strong></td>
@@ -2926,187 +2928,187 @@ window.handleResetPassword = window.submitNewPassword;
             </td>
           </tr>
         `;
-      }).join('');
-    };
+  }).join('');
+};
 
-    async function approveAdminDeposit(depositId) {
-      const token = localStorage.getItem('token');
-      if (!confirm('Are you sure you want to APPROVE this deposit request and credit user balance?')) return;
+async function approveAdminDeposit(depositId) {
+  const token = localStorage.getItem('token');
+  if (!confirm('Are you sure you want to APPROVE this deposit request and credit user balance?')) return;
 
-      try {
-        const res = await fetch('http://localhost:5000/api/admin/deposits/approve', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ depositId })
-        });
-
-        const data = await res.json();
-        if (res.ok && data.success) {
-          showTradeToast('✅ Deposit Approved & User Balance Credited!', 'success');
-          fetchAdminDashboard();
-        } else {
-          showTradeToast(data.message || 'Failed to approve deposit', 'warning');
-        }
-      } catch (err) {
-        showTradeToast('Network error approving deposit.', 'warning');
-      }
-    }
-
-    async function rejectAdminDeposit(depositId) {
-      const token = localStorage.getItem('token');
-      if (!confirm('Are you sure you want to REJECT this deposit request?')) return;
-
-      try {
-        const res = await fetch('http://localhost:5000/api/admin/deposits/reject', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ depositId, reason: 'Manual Admin Rejection' })
-        });
-
-        const data = await res.json();
-        if (res.ok && data.success) {
-          showTradeToast('Deposit Request Rejected.', 'info');
-          fetchAdminDashboard();
-        } else {
-          showTradeToast(data.message || 'Failed to reject deposit', 'warning');
-        }
-      } catch (err) {
-        showTradeToast('Network error rejecting deposit.', 'warning');
-      }
-    }
-
-    async function adminAdjustUserBalance(userId, currentBal) {
-      const token = localStorage.getItem('token');
-      const newBalStr = prompt(`Enter new balance amount for user (Current: $${currentBal}):`, currentBal);
-      if (newBalStr === null) return;
-
-      const newBalance = parseFloat(newBalStr);
-      if (isNaN(newBalance) || newBalance < 0) {
-        return showTradeToast('Please enter a valid positive balance number.', 'warning');
-      }
-
-      try {
-        const res = await fetch('http://localhost:5000/api/admin/users/update-balance', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ userId, newBalance })
-        });
-
-        const data = await res.json();
-        if (res.ok && data.success) {
-          showTradeToast(`✅ User balance updated to $${newBalance.toFixed(2)}`, 'success');
-          fetchAdminDashboard();
-        } else {
-          showTradeToast(data.message || 'Failed to update balance', 'warning');
-        }
-      } catch (err) {
-        showTradeToast('Network error updating balance.', 'warning');
-      }
-    }
-
-    async function adminToggleKYC(userId, currentStatus) {
-      const token = localStorage.getItem('token');
-      const newStatus = currentStatus === 'VERIFIED' ? 'UNVERIFIED' : 'VERIFIED';
-      if (!confirm(`Toggle KYC status to ${newStatus}?`)) return;
-
-      try {
-        const res = await fetch('http://localhost:5000/api/admin/users/toggle-kyc', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ userId, kycStatus: newStatus })
-        });
-
-        const data = await res.json();
-        if (res.ok && data.success) {
-          showTradeToast(`KYC status updated to ${newStatus}`, 'success');
-          fetchAdminDashboard();
-        } else {
-          showTradeToast(data.message || 'Failed to update KYC', 'warning');
-        }
-      } catch (err) {
-        showTradeToast('Network error updating KYC.', 'warning');
-      }
-    }
-
-    function saveAdminSettings() {
-      const addr = document.getElementById('adm-setting-treasury')?.value;
-      if (addr) {
-        const pageAddr = document.getElementById('deposit-page-address');
-        if (pageAddr) pageAddr.value = addr;
-        showTradeToast('✅ Treasury wallet settings saved successfully!', 'success');
-      }
-    }
-
-
-    function toggleProfileDropdown(e) {
-      if (e) e.stopPropagation();
-      const dropdown = document.getElementById('profile-dropdown');
-      if (dropdown) {
-        dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-      }
-    }
-
-    document.addEventListener('click', function(e) {
-      const dropdown = document.getElementById('profile-dropdown');
-      const wrapper = document.querySelector('.profile-dropdown-wrapper');
-      if (dropdown && wrapper && !wrapper.contains(e.target)) {
-        dropdown.style.display = 'none';
-      }
+  try {
+    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/deposits/approve', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ depositId })
     });
 
-    // ========== DOMCONTENTLOADED PAGE STARTUP ==========
-    document.addEventListener('DOMContentLoaded', function() {
-      try {
-        updateAuthUI();
+    const data = await res.json();
+    if (res.ok && data.success) {
+      showTradeToast('✅ Deposit Approved & User Balance Credited!', 'success');
+      fetchAdminDashboard();
+    } else {
+      showTradeToast(data.message || 'Failed to approve deposit', 'warning');
+    }
+  } catch (err) {
+    showTradeToast('Network error approving deposit.', 'warning');
+  }
+}
 
-        // 1. Check referral code parameter in URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const refCode = urlParams.get('ref');
-        if (refCode) {
-          localStorage.setItem('pendingRefCode', refCode);
-          const regRefInput = document.getElementById('reg-referral-code');
-          if (regRefInput) regRefInput.value = refCode;
-          showPage('register');
-        } else {
-          // 2. Check persistent session
-          const token = localStorage.getItem('token');
-          const userJson = localStorage.getItem('user');
-          if (token && userJson) {
-            try {
-              const user = JSON.parse(userJson);
-              if (user.role === 'admin') {
-                showAdminDashboard();
-              } else {
-                showPage('wallet');
-              }
-            } catch(e) {
-              showPage('home');
-            }
+async function rejectAdminDeposit(depositId) {
+  const token = localStorage.getItem('token');
+  if (!confirm('Are you sure you want to REJECT this deposit request?')) return;
+
+  try {
+    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/deposits/reject', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ depositId, reason: 'Manual Admin Rejection' })
+    });
+
+    const data = await res.json();
+    if (res.ok && data.success) {
+      showTradeToast('Deposit Request Rejected.', 'info');
+      fetchAdminDashboard();
+    } else {
+      showTradeToast(data.message || 'Failed to reject deposit', 'warning');
+    }
+  } catch (err) {
+    showTradeToast('Network error rejecting deposit.', 'warning');
+  }
+}
+
+async function adminAdjustUserBalance(userId, currentBal) {
+  const token = localStorage.getItem('token');
+  const newBalStr = prompt(`Enter new balance amount for user (Current: $${currentBal}):`, currentBal);
+  if (newBalStr === null) return;
+
+  const newBalance = parseFloat(newBalStr);
+  if (isNaN(newBalance) || newBalance < 0) {
+    return showTradeToast('Please enter a valid positive balance number.', 'warning');
+  }
+
+  try {
+    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/users/update-balance', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ userId, newBalance })
+    });
+
+    const data = await res.json();
+    if (res.ok && data.success) {
+      showTradeToast(`✅ User balance updated to $${newBalance.toFixed(2)}`, 'success');
+      fetchAdminDashboard();
+    } else {
+      showTradeToast(data.message || 'Failed to update balance', 'warning');
+    }
+  } catch (err) {
+    showTradeToast('Network error updating balance.', 'warning');
+  }
+}
+
+async function adminToggleKYC(userId, currentStatus) {
+  const token = localStorage.getItem('token');
+  const newStatus = currentStatus === 'VERIFIED' ? 'UNVERIFIED' : 'VERIFIED';
+  if (!confirm(`Toggle KYC status to ${newStatus}?`)) return;
+
+  try {
+    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/users/toggle-kyc', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ userId, kycStatus: newStatus })
+    });
+
+    const data = await res.json();
+    if (res.ok && data.success) {
+      showTradeToast(`KYC status updated to ${newStatus}`, 'success');
+      fetchAdminDashboard();
+    } else {
+      showTradeToast(data.message || 'Failed to update KYC', 'warning');
+    }
+  } catch (err) {
+    showTradeToast('Network error updating KYC.', 'warning');
+  }
+}
+
+function saveAdminSettings() {
+  const addr = document.getElementById('adm-setting-treasury')?.value;
+  if (addr) {
+    const pageAddr = document.getElementById('deposit-page-address');
+    if (pageAddr) pageAddr.value = addr;
+    showTradeToast('✅ Treasury wallet settings saved successfully!', 'success');
+  }
+}
+
+
+function toggleProfileDropdown(e) {
+  if (e) e.stopPropagation();
+  const dropdown = document.getElementById('profile-dropdown');
+  if (dropdown) {
+    dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+  }
+}
+
+document.addEventListener('click', function (e) {
+  const dropdown = document.getElementById('profile-dropdown');
+  const wrapper = document.querySelector('.profile-dropdown-wrapper');
+  if (dropdown && wrapper && !wrapper.contains(e.target)) {
+    dropdown.style.display = 'none';
+  }
+});
+
+// ========== DOMCONTENTLOADED PAGE STARTUP ==========
+document.addEventListener('DOMContentLoaded', function () {
+  try {
+    updateAuthUI();
+
+    // 1. Check referral code parameter in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const refCode = urlParams.get('ref');
+    if (refCode) {
+      localStorage.setItem('pendingRefCode', refCode);
+      const regRefInput = document.getElementById('reg-referral-code');
+      if (regRefInput) regRefInput.value = refCode;
+      showPage('register');
+    } else {
+      // 2. Check persistent session
+      const token = localStorage.getItem('token');
+      const userJson = localStorage.getItem('user');
+      if (token && userJson) {
+        try {
+          const user = JSON.parse(userJson);
+          if (user.role === 'admin') {
+            showAdminDashboard();
           } else {
-            showPage('home');
+            showPage('wallet');
           }
+        } catch (e) {
+          showPage('home');
         }
-
-        // 3. Start background live market feeds safely
-        if (typeof window.fetchHomeLivePrices === 'function') window.fetchHomeLivePrices().catch(err => console.warn('Live price feed notice:', err));
-        if (typeof window.fetchLiveMarkets === 'function') window.fetchLiveMarkets().catch(err => console.warn('Live markets feed notice:', err));
-
-      } catch (err) {
-        console.warn('Startup initialization notice:', err);
+      } else {
+        showPage('home');
       }
-    });
+    }
+
+    // 3. Start background live market feeds safely
+    if (typeof window.fetchHomeLivePrices === 'function') window.fetchHomeLivePrices().catch(err => console.warn('Live price feed notice:', err));
+    if (typeof window.fetchLiveMarkets === 'function') window.fetchLiveMarkets().catch(err => console.warn('Live markets feed notice:', err));
+
+  } catch (err) {
+    console.warn('Startup initialization notice:', err);
+  }
+});
 
 
 
@@ -3124,7 +3126,7 @@ window.converterPriceMap = window.converterPriceMap || {
   PKR: 1 / 278.5
 };
 
-window.fetchConverterRates = async function() {
+window.fetchConverterRates = async function () {
   try {
     const res = await fetch('/api/converter/rates');
     if (res.ok) {
@@ -3149,7 +3151,7 @@ window.fetchConverterRates = async function() {
   }
 };
 
-window.runConvert = async function() {
+window.runConvert = async function () {
   const amountEl = document.getElementById('conv-amount');
   const fromEl = document.getElementById('conv-from');
   const toEl = document.getElementById('conv-to');
@@ -3193,7 +3195,7 @@ window.runConvert = async function() {
   `;
 };
 
-window.swapConvert = function() {
+window.swapConvert = function () {
   const fromEl = document.getElementById('conv-from');
   const toEl = document.getElementById('conv-to');
   if (!fromEl || !toEl) return;
@@ -3229,7 +3231,7 @@ window.CHARTS_COINS = [
   { pair: 'DOT/USDT', sym: 'DOTUSDT', key: 'dot', name: 'Polkadot', icon: '●' }
 ];
 
-window.fetchLiveChartsGrid = async function() {
+window.fetchLiveChartsGrid = async function () {
   const container = document.getElementById('full-charts-grid');
   if (!container) return;
 
@@ -3248,7 +3250,7 @@ window.fetchLiveChartsGrid = async function() {
           const pData = await pRes.json();
           if (pData.success && pData.data) tickers = pData.data;
         }
-      } catch (e2) {}
+      } catch (e2) { }
     }
 
     if (!tickers || tickers.length === 0) return;
@@ -3266,16 +3268,16 @@ window.fetchLiveChartsGrid = async function() {
       const isUp = change >= 0;
       const colorHex = isUp ? '#34d399' : '#f87171';
       const changeStr = `${isUp ? '+' : ''}${change.toFixed(2)}%`;
-      const priceStr = price > 0 
+      const priceStr = price > 0
         ? `$${price.toLocaleString(undefined, { minimumFractionDigits: (price < 1 ? 4 : 2), maximumFractionDigits: (price < 1 ? 4 : 2) })}`
         : '—';
 
       const gradId = `full-chart-grad-${c.key}`;
       const color = isUp ? '#34d399' : '#f87171';
-      
-      let points = isUp 
-        ? [ [0,65], [35,55], [70,48], [105,42], [140,28], [175,22], [210,18], [245,15], [300,15] ]
-        : [ [0,15], [35,28], [70,38], [105,42], [140,52], [175,58], [210,65], [245,68], [300,68] ];
+
+      let points = isUp
+        ? [[0, 65], [35, 55], [70, 48], [105, 42], [140, 28], [175, 22], [210, 18], [245, 15], [300, 15]]
+        : [[0, 15], [35, 28], [70, 38], [105, 42], [140, 52], [175, 58], [210, 65], [245, 68], [300, 68]];
 
       let pathD = `M ${points[0][0]},${points[0][1]}`;
       for (let i = 0; i < points.length - 1; i++) {
@@ -3344,12 +3346,12 @@ window.chartsGridInterval = setInterval(() => {
 
 
 // ========== GLOBAL USER PROFILE HANDLERS ==========
-window.updateProfileInfo = async function(event) {
+window.updateProfileInfo = async function (event) {
   if (event) event.preventDefault();
   const token = localStorage.getItem('token') || localStorage.getItem('bitcashs_token');
   const userJson = localStorage.getItem('user');
   let currentEmail = '';
-  try { if (userJson) currentEmail = JSON.parse(userJson).email; } catch (e) {}
+  try { if (userJson) currentEmail = JSON.parse(userJson).email; } catch (e) { }
 
   const updatedData = {
     email: currentEmail,
@@ -3360,7 +3362,7 @@ window.updateProfileInfo = async function(event) {
   };
 
   try {
-    const res = await fetch('http://localhost:5000/api/user/profile', {
+    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/user/profile', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -3394,16 +3396,16 @@ window.updateProfileInfo = async function(event) {
   }
 };
 
-window.fetchUserProfile = async function() {
+window.fetchUserProfile = async function () {
   const token = localStorage.getItem('token') || localStorage.getItem('bitcashs_token');
   if (!token) return;
 
   const userJson = localStorage.getItem('user');
   let email = '';
-  try { if (userJson) email = JSON.parse(userJson).email; } catch (e) {}
+  try { if (userJson) email = JSON.parse(userJson).email; } catch (e) { }
 
   try {
-    const url = email ? `http://localhost:5000/api/user/profile?email=${encodeURIComponent(email)}` : 'http://localhost:5000/api/user/profile';
+    const url = email ? `https://bitcashs-platform-production.up.railway.app/api/user/profile?email=${encodeURIComponent(email)}` : 'https://bitcashs-platform-production.up.railway.app/api/user/profile';
     const res = await fetch(url, {
       method: 'GET',
       headers: {
@@ -3453,7 +3455,7 @@ window.fetchUserProfile = async function() {
 
         if (dName) dName.textContent = usernameVal.toUpperCase();
         if (dRole) dRole.textContent = roleVal.toUpperCase();
-        
+
         // 2b. Update KYC Status Badges and Profile KYC Card
         const kycStatus = (user.kycStatus || 'UNVERIFIED').toUpperCase();
         if (dKyc) {
@@ -3537,7 +3539,7 @@ window.kycUploadedFiles = {
   selfie: ''
 };
 
-window.goToKycStep = function(step) {
+window.goToKycStep = function (step) {
   // Validate Step 1
   if (step === 2) {
     const fn = document.getElementById('kyc-first-name')?.value?.trim();
@@ -3597,7 +3599,7 @@ window.goToKycStep = function(step) {
   window.scrollTo({ top: 100, behavior: 'smooth' });
 };
 
-window.setKycDocType = function(docType) {
+window.setKycDocType = function (docType) {
   const hiddenInput = document.getElementById('kyc-selected-doctype');
   if (hiddenInput) hiddenInput.value = docType;
 
@@ -3623,11 +3625,11 @@ window.setKycDocType = function(docType) {
   });
 };
 
-window.previewKycFile = function(input, previewImgId, placeholderId) {
+window.previewKycFile = function (input, previewImgId, placeholderId) {
   if (input && input.files && input.files[0]) {
     const file = input.files[0];
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = function (e) {
       const img = document.getElementById(previewImgId);
       const placeholder = document.getElementById(placeholderId);
       if (img) {
@@ -3646,7 +3648,7 @@ window.previewKycFile = function(input, previewImgId, placeholderId) {
   }
 };
 
-window.startKycCamera = async function() {
+window.startKycCamera = async function () {
   const video = document.getElementById('kyc-cam-video');
   const standby = document.getElementById('kyc-cam-standby');
   const controls = document.getElementById('kyc-cam-controls');
@@ -3665,7 +3667,7 @@ window.startKycCamera = async function() {
   }
 };
 
-window.captureKycPhoto = function() {
+window.captureKycPhoto = function () {
   const video = document.getElementById('kyc-cam-video');
   const canvas = document.getElementById('kyc-cam-canvas');
   const preview = document.getElementById('kyc-preview-selfie');
@@ -3695,7 +3697,7 @@ window.captureKycPhoto = function() {
   window.showTradeToast('Live photo captured successfully! ✓', 'success');
 };
 
-window.submitKycForm = async function(event) {
+window.submitKycForm = async function (event) {
   if (event) event.preventDefault();
 
   const selfieImg = document.getElementById('kyc-preview-selfie');
@@ -3706,7 +3708,7 @@ window.submitKycForm = async function(event) {
   const token = localStorage.getItem('token') || localStorage.getItem('bitcashs_token');
   const userJson = localStorage.getItem('user');
   let email = '';
-  try { if (userJson) email = JSON.parse(userJson).email; } catch (e) {}
+  try { if (userJson) email = JSON.parse(userJson).email; } catch (e) { }
 
   const btn = document.getElementById('btn-kyc-submit');
   if (btn) {
@@ -3739,7 +3741,7 @@ window.submitKycForm = async function(event) {
   if (btn) btn.textContent = 'Submitting verification...';
 
   try {
-    const res = await fetch('http://localhost:5000/api/kyc/submit', {
+    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/kyc/submit', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -3788,7 +3790,7 @@ window.submitKycForm = async function(event) {
 // ========== ADMIN KYC DOCUMENT INSPECTION & APPROVALS ==========
 window.adminKycRequestsData = [];
 
-window.fetchAdminKycRequests = async function() {
+window.fetchAdminKycRequests = async function () {
   const token = localStorage.getItem('token');
   if (!token) return;
 
@@ -3796,7 +3798,7 @@ window.fetchAdminKycRequests = async function() {
   if (!tbody) return;
 
   try {
-    const res = await fetch('http://localhost:5000/api/admin/kyc-requests', {
+    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/kyc-requests', {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -3829,7 +3831,7 @@ function renderAdminKycTable(requests) {
     const username = r.username ? `<span style="display:inline-block; margin-left:6px; background:rgba(234,179,8,0.15); border:1px solid rgba(234,179,8,0.3); color:#fde68a; font-size:11px; font-weight:700; padding:2px 8px; border-radius:10px;">${r.username}</span>` : '';
     const dateStr = r.submittedAt ? new Date(r.submittedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Today';
     const status = (r.status || r.kycStatus || 'PENDING_APPROVAL').toUpperCase();
-    
+
     let statusBadge = '<span style="background:rgba(234,179,8,0.15); border:1px solid rgba(234,179,8,0.35); color:#facc15; font-size:11px; font-weight:800; padding:4px 10px; border-radius:12px;">PENDING APPROVAL</span>';
     if (status === 'VERIFIED') {
       statusBadge = '<span style="background:rgba(52,211,153,0.15); border:1px solid rgba(52,211,153,0.35); color:#34d399; font-size:11px; font-weight:800; padding:4px 10px; border-radius:12px;">VERIFIED ✓</span>';
@@ -3858,7 +3860,7 @@ function renderAdminKycTable(requests) {
   }).join('');
 }
 
-window.openAdminKycModal = function(userId) {
+window.openAdminKycModal = function (userId) {
   const req = window.adminKycRequestsData.find(r => (r.userId || r.id) === userId);
   if (!req) return window.showTradeToast('KYC request details not found', 'warning');
 
@@ -3900,17 +3902,17 @@ window.openAdminKycModal = function(userId) {
   if (modal) modal.style.display = 'flex';
 };
 
-window.closeAdminKycModal = function() {
+window.closeAdminKycModal = function () {
   const modal = document.getElementById('admin-kyc-modal');
   if (modal) modal.style.display = 'none';
 };
 
-window.approveAdminKyc = async function(userId) {
+window.approveAdminKyc = async function (userId) {
   const token = localStorage.getItem('token');
   if (!confirm('Are you sure you want to APPROVE this KYC verification?')) return;
 
   try {
-    const res = await fetch(`http://localhost:5000/api/admin/kyc/approve/${userId}`, {
+    const res = await fetch(`https://bitcashs-platform-production.up.railway.app/api/admin/kyc/approve/${userId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -3924,7 +3926,7 @@ window.approveAdminKyc = async function(userId) {
       window.showTradeToast('✅ KYC Verification Approved Successfully!', 'success');
       window.closeAdminKycModal();
       if (typeof window.fetchAdminKycRequests === 'function') window.fetchAdminKycRequests();
-        if (typeof window.fetchAdminTrades === 'function') window.fetchAdminTrades();
+      if (typeof window.fetchAdminTrades === 'function') window.fetchAdminTrades();
       if (typeof window.fetchAdminDashboard === 'function') window.fetchAdminDashboard();
     } else {
       window.showTradeToast(data.message || 'Failed to approve KYC', 'warning');
@@ -3935,12 +3937,12 @@ window.approveAdminKyc = async function(userId) {
   }
 };
 
-window.rejectAdminKyc = async function(userId) {
+window.rejectAdminKyc = async function (userId) {
   const token = localStorage.getItem('token');
   if (!confirm('Are you sure you want to REJECT this KYC verification?')) return;
 
   try {
-    const res = await fetch(`http://localhost:5000/api/admin/kyc/reject/${userId}`, {
+    const res = await fetch(`https://bitcashs-platform-production.up.railway.app/api/admin/kyc/reject/${userId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -3954,7 +3956,7 @@ window.rejectAdminKyc = async function(userId) {
       window.showTradeToast('⚠️ KYC Verification has been Rejected.', 'info');
       window.closeAdminKycModal();
       if (typeof window.fetchAdminKycRequests === 'function') window.fetchAdminKycRequests();
-        if (typeof window.fetchAdminTrades === 'function') window.fetchAdminTrades();
+      if (typeof window.fetchAdminTrades === 'function') window.fetchAdminTrades();
       if (typeof window.fetchAdminDashboard === 'function') window.fetchAdminDashboard();
     } else {
       window.showTradeToast(data.message || 'Failed to reject KYC', 'warning');
@@ -4035,7 +4037,7 @@ window.LEGAL_DOCS = {
   }
 };
 
-window.openLegalModal = function(type) {
+window.openLegalModal = function (type) {
   const modal = document.getElementById('legal-content-modal') || document.getElementById('legal-modal');
   const titleEl = document.getElementById('legal-modal-title');
   const bodyEl = document.getElementById('legal-modal-body');
@@ -4050,7 +4052,7 @@ window.openLegalModal = function(type) {
   }
 };
 
-window.closeLegalModal = function() {
+window.closeLegalModal = function () {
   const modal = document.getElementById('legal-content-modal') || document.getElementById('legal-modal');
   if (modal) {
     modal.style.display = 'none';
@@ -4062,11 +4064,11 @@ window.closeLegalModal = function() {
 // ========== DEPOSIT PROOF & ADMIN DEPOSITS CONTROLLER ==========
 window.depositProofBase64 = '';
 
-window.previewPageReceipt = function(input) {
+window.previewPageReceipt = function (input) {
   if (input && input.files && input.files[0]) {
     const file = input.files[0];
     const reader = new FileReader();
-    reader.onload = async function(e) {
+    reader.onload = async function (e) {
       let base64 = e.target.result;
       if (typeof compressBase64Image === 'function') {
         base64 = await compressBase64Image(base64, 1280, 0.7);
@@ -4084,7 +4086,7 @@ window.previewPageReceipt = function(input) {
 
 window.previewDepositImage = window.previewPageReceipt;
 
-window.submitDepositProof = async function(e) {
+window.submitDepositProof = async function (e) {
   if (e) e.preventDefault();
 
   const amountInput = document.getElementById('dep-page-amount');
@@ -4117,7 +4119,7 @@ window.submitDepositProof = async function(e) {
   const token = localStorage.getItem('token') || localStorage.getItem('bitcashs_token');
   const userJson = localStorage.getItem('user') || localStorage.getItem('bitcashs_user');
   let email = '';
-  try { if (userJson) email = JSON.parse(userJson).email; } catch (err) {}
+  try { if (userJson) email = JSON.parse(userJson).email; } catch (err) { }
 
   let proofBase64 = window.depositProofBase64 || window.uploadedReceiptBase64 || '';
   if (!proofBase64 && fileInput && fileInput.files && fileInput.files[0]) {
@@ -4128,7 +4130,7 @@ window.submitDepositProof = async function(e) {
         r.onerror = () => resolve('');
         r.readAsDataURL(fileInput.files[0]);
       });
-    } catch(err) {}
+    } catch (err) { }
   }
 
   const payload = {
@@ -4147,7 +4149,7 @@ window.submitDepositProof = async function(e) {
   };
 
   try {
-    const res = await fetch('http://localhost:5000/api/wallet/deposit', {
+    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/wallet/deposit', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -4186,7 +4188,7 @@ window.submitDepositProof = async function(e) {
 window.submitFullPageDepositProof = window.submitDepositProof;
 
 // Safe Image Source Formatter for Receipts and Uploads
-window.getSafeImageSrc = function(src) {
+window.getSafeImageSrc = function (src) {
   if (!src || typeof src !== 'string') return null;
   const s = src.trim();
   if (s.startsWith('http://') || s.startsWith('https://') || s.startsWith('/') || s.startsWith('blob:')) {
@@ -4201,10 +4203,10 @@ window.getSafeImageSrc = function(src) {
   return null;
 };
 
-window.openReceiptModal = function(idOrSrc) {
+window.openReceiptModal = function (idOrSrc) {
   const modal = document.getElementById('admin-receipt-modal');
   const img = document.getElementById('admin-receipt-full-img');
-  
+
   let targetSrc = '';
   let depositInfo = null;
 
@@ -4222,7 +4224,7 @@ window.openReceiptModal = function(idOrSrc) {
       const emailText = depositInfo ? (depositInfo.userEmail || depositInfo.username || 'User') : 'Verified Deposit';
       const amtText = depositInfo ? `$${(parseFloat(depositInfo.amount) || 0).toLocaleString()} USDT` : 'Blockchain Transfer';
       const txidText = depositInfo ? (depositInfo.txid || 'Confirmed') : 'TXID Verified';
-      
+
       const canvas = document.createElement('canvas');
       canvas.width = 600;
       canvas.height = 320;
@@ -4264,17 +4266,17 @@ window.openReceiptModal = function(idOrSrc) {
   if (modal) modal.style.display = 'flex';
 };
 
-window.closeReceiptModal = function() {
+window.closeReceiptModal = function () {
   const modal = document.getElementById('admin-receipt-modal');
   if (modal) modal.style.display = 'none';
 };
 
-window.approveAdminDeposit = async function(depositId) {
+window.approveAdminDeposit = async function (depositId) {
   const token = localStorage.getItem('token');
   if (!confirm('Are you sure you want to APPROVE this deposit and credit the user balance?')) return;
 
   try {
-    const res = await fetch(`http://localhost:5000/api/admin/deposits/approve/${depositId}`, {
+    const res = await fetch(`https://bitcashs-platform-production.up.railway.app/api/admin/deposits/approve/${depositId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -4296,12 +4298,12 @@ window.approveAdminDeposit = async function(depositId) {
   }
 };
 
-window.rejectAdminDeposit = async function(depositId) {
+window.rejectAdminDeposit = async function (depositId) {
   const token = localStorage.getItem('token');
   if (!confirm('Are you sure you want to REJECT this deposit request?')) return;
 
   try {
-    const res = await fetch(`http://localhost:5000/api/admin/deposits/reject/${depositId}`, {
+    const res = await fetch(`https://bitcashs-platform-production.up.railway.app/api/admin/deposits/reject/${depositId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -4346,7 +4348,7 @@ window.currentBinaryTrade = {
 
 window.binaryCountdownTimer = null;
 
-window.openOrderModal = function(direction = 'Buy Up') {
+window.openOrderModal = function (direction = 'Buy Up') {
   if (!window.requireKycVerification('trade binary options contracts')) return;
 
   const modal = document.getElementById('modal-order-setup');
@@ -4369,17 +4371,17 @@ window.openOrderModal = function(direction = 'Buy Up') {
   if (modal) modal.style.display = 'flex';
 };
 
-window.closeOrderModal = function() {
+window.closeOrderModal = function () {
   const modal = document.getElementById('modal-order-setup');
   if (modal) modal.style.display = 'none';
 };
 
-window.closeResultModal = function() {
+window.closeResultModal = function () {
   const modal = document.getElementById('modal-order-result');
   if (modal) modal.style.display = 'none';
 };
 
-window.renderBinaryCyclesGrid = function() {
+window.renderBinaryCyclesGrid = function () {
   const grid = document.getElementById('opt-cycles-grid');
   if (!grid) return;
 
@@ -4387,7 +4389,7 @@ window.renderBinaryCyclesGrid = function() {
     const isSelected = idx === window.currentBinaryTrade.cycleIndex;
     const border = isSelected ? '2px solid #eab308' : '1px solid rgba(255,255,255,0.08)';
     const bg = isSelected ? 'rgba(234,179,8,0.12)' : 'rgba(255,255,255,0.02)';
-    
+
     return `
       <div onclick="selectBinaryCycle(${idx})"
         style="border:${border}; background:${bg}; border-radius:12px; padding:12px 8px; text-align:center; cursor:pointer; transition:0.2s;">
@@ -4399,7 +4401,7 @@ window.renderBinaryCyclesGrid = function() {
   }).join('');
 };
 
-window.selectBinaryCycle = function(idx) {
+window.selectBinaryCycle = function (idx) {
   window.currentBinaryTrade.cycleIndex = idx;
   const cycle = window.BINARY_CYCLES[idx];
   window.currentBinaryTrade.profitPct = cycle.profitPct;
@@ -4416,7 +4418,7 @@ window.selectBinaryCycle = function(idx) {
   window.calcOptionProfit();
 };
 
-window.getUserBalanceNumber = function() {
+window.getUserBalanceNumber = function () {
   let userBal = 0;
   const balDisplay = document.getElementById('wallet-total-balance-usd') || document.getElementById('wallet-balance-display');
   if (balDisplay) {
@@ -4425,23 +4427,23 @@ window.getUserBalanceNumber = function() {
   if (userBal <= 0) {
     const userJson = localStorage.getItem('user');
     if (userJson) {
-      try { userBal = parseFloat(JSON.parse(userJson).balance) || 0; } catch (e) {}
+      try { userBal = parseFloat(JSON.parse(userJson).balance) || 0; } catch (e) { }
     }
   }
   return userBal;
 };
 
-window.updateOptionAvailableBalance = function() {
+window.updateOptionAvailableBalance = function () {
   const bal = window.getUserBalanceNumber();
   const balEl = document.getElementById('opt-user-avail-bal');
   const exchBalEl = document.getElementById('quick-exchange-avail-usdt');
 
-  const balFormatted = `$${bal.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+  const balFormatted = `$${bal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   if (balEl) balEl.innerText = balFormatted;
-  if (exchBalEl) exchBalEl.innerText = `$${bal.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+  if (exchBalEl) exchBalEl.innerText = `$${bal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
-window.setOptionStakePct = function(pct) {
+window.setOptionStakePct = function (pct) {
   const cycle = window.BINARY_CYCLES[window.currentBinaryTrade.cycleIndex];
   const userBal = window.getUserBalanceNumber();
   const qtyInput = document.getElementById('opt-purchase-qty');
@@ -4456,7 +4458,7 @@ window.setOptionStakePct = function(pct) {
   window.calcOptionProfit();
 };
 
-window.calcOptionProfit = function() {
+window.calcOptionProfit = function () {
   const cycle = window.BINARY_CYCLES[window.currentBinaryTrade.cycleIndex];
   const qtyInput = document.getElementById('opt-purchase-qty');
   const ratioEl = document.getElementById('opt-calc-ratio');
@@ -4476,11 +4478,11 @@ window.calcOptionProfit = function() {
 
   if (ratioEl) ratioEl.innerText = `+${cycle.profitPct}% (Net: ${(cycle.profitPct - 1)}%)`;
   if (profitEl) {
-    profitEl.innerText = `+$${netProfit.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})} USDT (Fee: $${platformFee.toFixed(2)})`;
+    profitEl.innerText = `+$${netProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT (Fee: $${platformFee.toFixed(2)})`;
   }
 };
 
-window.confirmBinaryOrder = async function() {
+window.confirmBinaryOrder = async function () {
   if (!window.requireKycVerification('place trading orders')) return;
 
   const cycle = window.BINARY_CYCLES[window.currentBinaryTrade.cycleIndex];
@@ -4499,7 +4501,7 @@ window.confirmBinaryOrder = async function() {
   const token = localStorage.getItem('token') || localStorage.getItem('bitcashs_token');
   const userJson = localStorage.getItem('user');
   let email = '';
-  try { if (userJson) email = JSON.parse(userJson).email; } catch (e) {}
+  try { if (userJson) email = JSON.parse(userJson).email; } catch (e) { }
 
   window.currentBinaryTrade.stake = stake;
   window.currentBinaryTrade.duration = cycle.duration;
@@ -4511,7 +4513,7 @@ window.confirmBinaryOrder = async function() {
 
   // 1. Immediately deduct stake on backend
   try {
-    const placeRes = await fetch('http://localhost:5000/api/trade/binary-place', {
+    const placeRes = await fetch('https://bitcashs-platform-production.up.railway.app/api/trade/binary-place', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -4539,11 +4541,11 @@ window.confirmBinaryOrder = async function() {
         const uObj = JSON.parse(userJson);
         uObj.balance = updatedBal;
         localStorage.setItem('user', JSON.stringify(uObj));
-      } catch (e) {}
+      } catch (e) { }
     }
 
     const balDisplay = document.getElementById('wallet-total-balance-usd');
-    if (balDisplay) balDisplay.innerText = `$${updatedBal.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+    if (balDisplay) balDisplay.innerText = `$${updatedBal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     if (typeof window.updateOptionAvailableBalance === 'function') window.updateOptionAvailableBalance();
 
     window.showTradeToast(`⚡ Order placed: -$${stake.toLocaleString()} USDT stake locked in ${cycle.label}`, 'info');
@@ -4559,7 +4561,7 @@ window.confirmBinaryOrder = async function() {
   window.startBinaryCountdown(window.currentBinaryTrade);
 };
 
-window.startBinaryCountdown = function(trade) {
+window.startBinaryCountdown = function (trade) {
   const cdModal = document.getElementById('modal-order-countdown');
   const pairEl = document.getElementById('opt-cd-pair');
   const dirEl = document.getElementById('opt-cd-dir-text');
@@ -4573,8 +4575,8 @@ window.startBinaryCountdown = function(trade) {
     dirEl.textContent = `${trade.direction} ${trade.direction === 'Buy Up' ? '▲' : '▼'}`;
     dirEl.style.color = trade.direction === 'Buy Up' ? '#34d399' : '#f87171';
   }
-  if (stakeEl) stakeEl.textContent = `$${trade.stake.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})} USDT`;
-  if (profitEl) profitEl.textContent = `+$${trade.profit.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})} USDT (+${trade.profitPct}%)`;
+  if (stakeEl) stakeEl.textContent = `$${trade.stake.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT`;
+  if (profitEl) profitEl.textContent = `+$${trade.profit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT (+${trade.profitPct}%)`;
 
   const totalSec = trade.duration || 30;
   let remainingSec = totalSec;
@@ -4606,11 +4608,11 @@ window.startBinaryCountdown = function(trade) {
   }, 1000);
 };
 
-window.triggerBinarySettlement = async function(trade) {
+window.triggerBinarySettlement = async function (trade) {
   const token = localStorage.getItem('token') || localStorage.getItem('bitcashs_token');
   const userJson = localStorage.getItem('user');
   let email = '';
-  try { if (userJson) email = JSON.parse(userJson).email; } catch (e) {}
+  try { if (userJson) email = JSON.parse(userJson).email; } catch (e) { }
 
   const resultModal = document.getElementById('modal-order-result');
   const resultCard = document.getElementById('opt-res-card');
@@ -4635,7 +4637,7 @@ window.triggerBinarySettlement = async function(trade) {
     dirEl.style.color = trade.direction === 'Buy Down' ? '#f87171' : '#34d399';
   }
   if (durEl) durEl.textContent = `${trade.label || (trade.duration || 30) + 's'} Cycle`;
-  if (stakeEl) stakeEl.textContent = `$${stake.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})} USDT`;
+  if (stakeEl) stakeEl.textContent = `$${stake.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT`;
   if (feeEl) feeEl.textContent = `-$${platformFee.toFixed(2)} USDT (1%)`;
 
   let isWin = false;
@@ -4644,7 +4646,7 @@ window.triggerBinarySettlement = async function(trade) {
 
   // Settle on backend (Strict Loss Default unless explicitly 'WIN' or 'FORCE_WIN')
   try {
-    const res = await fetch('http://localhost:5000/api/trade/binary-settle', {
+    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/trade/binary-settle', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -4688,7 +4690,7 @@ window.triggerBinarySettlement = async function(trade) {
     }
     if (statusIcon) statusIcon.textContent = '✓';
     if (profitAmtEl) {
-      profitAmtEl.textContent = `+$${netProfit.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})} USDT`;
+      profitAmtEl.textContent = `+$${netProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT`;
       profitAmtEl.style.color = '#34d399';
     }
     if (subtitleEl) {
@@ -4713,7 +4715,7 @@ window.triggerBinarySettlement = async function(trade) {
     }
     if (statusIcon) statusIcon.textContent = '✕';
     if (profitAmtEl) {
-      profitAmtEl.textContent = `-$${stake.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})} USDT`;
+      profitAmtEl.textContent = `-$${stake.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT`;
       profitAmtEl.style.color = '#ef4444';
     }
     if (subtitleEl) {
@@ -4740,7 +4742,7 @@ window.quickExchangeRates = {
   SOL: 148.25
 };
 
-window.calcQuickExchange = function() {
+window.calcQuickExchange = function () {
   const fromInput = document.getElementById('quick-exchange-from-val');
   const toCoinSelect = document.getElementById('quick-exchange-to-coin');
   const receiveInput = document.getElementById('quick-exchange-receive-val');
@@ -4756,11 +4758,11 @@ window.calcQuickExchange = function() {
   }
 
   if (rateHint) {
-    rateHint.textContent = `1 ${toCoin} ≈ $${coinPrice.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2})} USDT`;
+    rateHint.textContent = `1 ${toCoin} ≈ $${coinPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USDT`;
   }
 };
 
-window.setQuickExchangeMax = function() {
+window.setQuickExchangeMax = function () {
   const bal = window.getUserBalanceNumber();
   const fromInput = document.getElementById('quick-exchange-from-val');
   if (fromInput) {
@@ -4769,7 +4771,7 @@ window.setQuickExchangeMax = function() {
   }
 };
 
-window.submitQuickExchange = async function() {
+window.submitQuickExchange = async function () {
   const token = localStorage.getItem('token') || localStorage.getItem('bitcashs_token');
   if (!token) {
     if (typeof window.showTradeToast === 'function') {
@@ -4798,10 +4800,10 @@ window.submitQuickExchange = async function() {
 
   const userJson = localStorage.getItem('user');
   let email = '';
-  try { if (userJson) email = JSON.parse(userJson).email; } catch (e) {}
+  try { if (userJson) email = JSON.parse(userJson).email; } catch (e) { }
 
   try {
-    const res = await fetch('http://localhost:5000/api/wallet/exchange', {
+    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/wallet/exchange', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -4836,7 +4838,7 @@ window.submitQuickExchange = async function() {
 // ==========================================================================
 // EXPLICIT WINDOW AUTH & FORGOT PASSWORD FLOW HANDLERS
 // ==========================================================================
-window.showAdminPanel = function() {
+window.showAdminPanel = function () {
   if (typeof window.showAdminDashboard === 'function') {
     window.showAdminDashboard();
   } else {
@@ -4844,7 +4846,7 @@ window.showAdminPanel = function() {
   }
 };
 
-window.handleForgotPassword = async function(e) {
+window.handleForgotPassword = async function (e) {
   if (e) e.preventDefault();
   const emailInput = document.getElementById('forgot-email-input') || document.getElementById('modal-forgot-email');
   const email = (emailInput?.value || '').trim().toLowerCase();
@@ -4858,7 +4860,7 @@ window.handleForgotPassword = async function(e) {
   }
 
   try {
-    const res = await fetch('http://localhost:5000/api/auth/forgot-password', {
+    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/auth/forgot-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email })
@@ -4892,7 +4894,7 @@ window.handleForgotPassword = async function(e) {
 
 window.handleSendResetOTP = window.handleForgotPassword;
 
-window.verifyForgotOtp = async function(e) {
+window.verifyForgotOtp = async function (e) {
   if (e) e.preventDefault();
   const otpInput = document.getElementById('forgot-otp-input') || document.getElementById('modal-forgot-otp');
   const otp = (otpInput?.value || '').trim();
@@ -4906,7 +4908,7 @@ window.verifyForgotOtp = async function(e) {
   window.showTradeToast('OTP code confirmed. Enter your new password below.', 'info');
 };
 
-window.submitNewPassword = async function(e) {
+window.submitNewPassword = async function (e) {
   if (e) e.preventDefault();
   const otpInput = document.getElementById('forgot-otp-input') || document.getElementById('modal-forgot-otp');
   const newPassInput = document.getElementById('forgot-new-password') || document.getElementById('modal-forgot-newpass');
@@ -4936,7 +4938,7 @@ window.submitNewPassword = async function(e) {
   }
 
   try {
-    const res = await fetch('http://localhost:5000/api/auth/reset-password', {
+    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/auth/reset-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, otp, newPassword })
@@ -4964,7 +4966,7 @@ window.submitNewPassword = async function(e) {
 window.handleResetPassword = window.submitNewPassword;
 window.resetPassword = window.submitNewPassword;
 
-window.showModalForgotStep = function(step) {
+window.showModalForgotStep = function (step) {
   const reqStep = document.getElementById('modal-forgot-step-request');
   const resetStep = document.getElementById('modal-forgot-step-reset');
   if (step === 'request') {
@@ -4976,7 +4978,7 @@ window.showModalForgotStep = function(step) {
   }
 };
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   if (typeof window.renderMarketsTable === 'function') {
     window.renderMarketsTable();
   }
@@ -4986,7 +4988,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // ==========================================================================
 // TOAST NOTIFICATION SYSTEM & CONTACT US FORM DISPATCH
 // ==========================================================================
-window.showTradeToast = function(message, type = 'info') {
+window.showTradeToast = function (message, type = 'info') {
   let toastContainer = document.getElementById('app-toast-container');
   if (!toastContainer) {
     toastContainer = document.createElement('div');
@@ -5052,7 +5054,7 @@ window.showTradeToast = function(message, type = 'info') {
   }, 4500);
 };
 
-window.submitContact = async function(e) {
+window.submitContact = async function (e) {
   if (e) e.preventDefault();
 
   const nameInput = document.getElementById('contact-name');
@@ -5094,7 +5096,7 @@ window.submitContact = async function(e) {
   }
 
   try {
-    const res = await fetch('http://localhost:5000/api/contact', {
+    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/contact', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -5158,12 +5160,12 @@ window.submitContactForm = window.submitContact;
 // ==========================================================================
 window.rawAdminTradesList = [];
 
-window.fetchAdminTrades = async function() {
+window.fetchAdminTrades = async function () {
   const token = localStorage.getItem('token') || localStorage.getItem('bitcashs_token');
   if (!token) return;
 
   try {
-    const res = await fetch('http://localhost:5000/api/admin/trades', {
+    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/admin/trades', {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -5188,7 +5190,7 @@ window.fetchAdminTrades = async function() {
   }
 };
 
-window.renderAdminTradesTable = function(trades) {
+window.renderAdminTradesTable = function (trades) {
   const tbody = document.getElementById('admin-trades-table-body');
   if (!tbody) return;
 
@@ -5260,7 +5262,7 @@ window.renderAdminTradesTable = function(trades) {
   }).join('');
 };
 
-window.filterAdminTradesTable = function() {
+window.filterAdminTradesTable = function () {
   const searchVal = (document.getElementById('admin-trades-search')?.value || '').toLowerCase().trim();
   const outcomeFilter = (document.getElementById('admin-trades-filter-outcome')?.value || 'ALL').toUpperCase();
 
