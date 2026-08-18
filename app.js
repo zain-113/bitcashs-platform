@@ -1,6 +1,4 @@
-const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? ''
-  : 'https://bitcashs-platform-production.up.railway.app';
+window.API_BASE_URL = 'https://bitcashs-platform-production.up.railway.app';
 // ==========================================================================
 // MARKETS PAGE CONTROLLERS & REAL-TIME TABLE RENDERER
 // ==========================================================================
@@ -348,7 +346,7 @@ window.fetchLiveMarkets = async function () {
     return window.fetchHomeLivePrices();
   }
   try {
-    const res = await fetch('/api/market/prices');
+    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/market/prices');
     if (res.ok) {
       const json = await res.json();
       const data = json.data || json;
@@ -1511,14 +1509,14 @@ window.fetchHomeLivePrices = async function () {
   try {
     let tickers = [];
     try {
-      const sRes = await fetch('/api/markets');
+      const sRes = await fetch('https://bitcashs-platform-production.up.railway.app/api/markets');
       if (sRes.ok) {
         const sData = await sRes.json();
         if (sData.success && sData.markets) tickers = sData.markets;
       }
     } catch (e) {
       try {
-        const pRes = await fetch('/api/market/prices');
+        const pRes = await fetch('https://bitcashs-platform-production.up.railway.app/api/market/prices');
         if (pRes.ok) {
           const pData = await pRes.json();
           if (pData.success && pData.data) tickers = pData.data;
@@ -3128,7 +3126,7 @@ window.converterPriceMap = window.converterPriceMap || {
 
 window.fetchConverterRates = async function () {
   try {
-    const res = await fetch('/api/converter/rates');
+    const res = await fetch('https://bitcashs-platform-production.up.railway.app/api/converter/rates');
     if (res.ok) {
       const data = await res.json();
       if (data.rates) {
@@ -3238,14 +3236,14 @@ window.fetchLiveChartsGrid = async function () {
   try {
     let tickers = [];
     try {
-      const sRes = await fetch('/api/markets');
+      const sRes = await fetch('https://bitcashs-platform-production.up.railway.app/api/markets');
       if (sRes.ok) {
         const sData = await sRes.json();
         if (sData.success && sData.markets) tickers = sData.markets;
       }
     } catch (e) {
       try {
-        const pRes = await fetch('/api/market/prices');
+        const pRes = await fetch('https://bitcashs-platform-production.up.railway.app/api/market/prices');
         if (pRes.ok) {
           const pData = await pRes.json();
           if (pData.success && pData.data) tickers = pData.data;
