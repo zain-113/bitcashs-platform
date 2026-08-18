@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://bitcashs-platform-production.up.railway.app/api/"
+    }
+  ]
+}

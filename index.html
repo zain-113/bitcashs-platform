@@ -5,6 +5,8 @@
 
   <!-- CRITICAL GLOBAL AUTH MODAL HANDLERS (IMMEDIATE AVAILABILITY) -->
   <script>
+    window.API_BASE_URL = 'https://bitcashs-platform-production.up.railway.app';
+
     window.openLoginModal = function() {
       const overlay = document.getElementById('auth-modal-overlay');
       const loginPanel = document.getElementById('login-modal') || document.getElementById('modal-login-panel');
