@@ -60,7 +60,7 @@ async function sendMailHelper({ to, subject, text, html }) {
   if (process.env.RESEND_API_KEY) {
     try {
       const info = await resend.emails.send({
-        from: 'BitCashs Exchange <onboarding@resend.dev>',
+        from: 'BitCashs Exchange <info@bitcashs.com>',
         to,
         subject,
         text,
@@ -376,7 +376,7 @@ async function sendEmailOTP(email, otpCode) {
 
   try {
     await resend.emails.send({
-      from: 'BitCashs Security <onboarding@resend.dev>',
+      from: 'BitCashs Security <info@bitcashs.com>',
       to: email,
       subject: 'BitCashs Account Signup Verification OTP',
       html: `
