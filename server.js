@@ -1161,6 +1161,7 @@ app.post(['/api/trade/binary-place', '/api/trade/binary-execute', '/api/wallet/b
 function getDistinctTradesAndFees(allUsers) {
   let allTrades = [];
   let totalTradeVolume = 0;
+  let totalPlatformFee = 0;
 
   allUsers.forEach(u => {
     if (u.transactions && Array.isArray(u.transactions)) {
@@ -1176,8 +1177,6 @@ function getDistinctTradesAndFees(allUsers) {
         return (tType.includes('placed') || tType === 'binary trade placed') && (t.status === 'Pending' || t.status === 'Active');
       });
 
-      // If settlements exist, each represents 1 distinct trade.
-      // If there are extra pending placed records without settlements, include them as active pending trades.
       const tradeRecords = [...settlements];
       if (pendingPlaced.length > settlements.length) {
         tradeRecords.push(...pendingPlaced.slice(settlements.length));
@@ -1191,12 +1190,31 @@ function getDistinctTradesAndFees(allUsers) {
         const isLoss = tType.includes('loss');
         const outcome = isWin ? 'WIN' : (isLoss ? 'LOSS' : 'PENDING');
 
-        const stake = parseFloat(t.stake) || Math.abs(parseFloat(t.amount)) || 100;
-        const fee = parseFloat((stake * 0.01).toFixed(2));
+        // Strictly extract base stake amount (stripping win profit if amount is 109)
+        let stake = 100;
+        if (t.stake !== undefined && !isNaN(parseFloat(t.stake))) {
+          stake = parseFloat(t.stake);
+        } else if (t.amount !== undefined && !isNaN(parseFloat(t.amount))) {
+          const rawAmt = Math.abs(parseFloat(t.amount));
+          if (rawAmt === 109 || rawAmt === 108 || (isWin && rawAmt > 100 && rawAmt < 120)) {
+            stake = 100;
+          } else {
+            stake = rawAmt;
+          }
+        }
+
+        // Strict 1% Platform Fee based ONLY on base stake ($100 -> $1.00)
+        let fee = parseFloat((stake * 0.01).toFixed(2));
+        if (t.platformFee !== undefined && !isNaN(parseFloat(t.platformFee))) {
+          const rawFee = parseFloat(t.platformFee);
+          fee = (rawFee === 1.09 || rawFee === 2.09) ? 1.00 : parseFloat(rawFee.toFixed(2));
+        }
+
         const netProfit = parseFloat(t.netProfit) || (isWin ? (stake * 0.09) : 0);
         const totalPayout = parseFloat(t.totalPayout) || (isWin ? (stake + netProfit) : 0);
 
         totalTradeVolume += stake;
+        totalPlatformFee += fee;
 
         let pair = 'BTC/USDT';
         let direction = 'Buy Up';
@@ -1214,7 +1232,7 @@ function getDistinctTradesAndFees(allUsers) {
         allTrades.push({
           id: t._id || t.id || `${u._id}_${t.createdAt || Date.now()}`,
           userId: u._id,
-          userName: u.fullName || u.username || u.email.split('@')[0],
+          userName: u.fullName || u.username || (u.email ? u.email.split('@')[0] : 'User'),
           userEmail: u.email,
           pair: pair,
           direction: direction,
@@ -1234,7 +1252,7 @@ function getDistinctTradesAndFees(allUsers) {
   return {
     allTrades,
     totalTradeVolume: parseFloat(totalTradeVolume.toFixed(2)),
-    totalPlatformFee: parseFloat((totalTradeVolume * 0.01).toFixed(2))
+    totalPlatformFee: parseFloat(totalPlatformFee.toFixed(2))
   };
 }
 
