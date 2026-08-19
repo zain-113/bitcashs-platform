@@ -83,7 +83,16 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static(path.join(__dirname)));
-app.get('/favicon.ico', (req, res) => res.status(204).end());
+
+// Golden circular icon (#eab308) matching BitCashs brand
+const FAVICON_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAABfUlEQVR4nGNgGGrg1WYOUSD2AOJsIK6F4myomCitLGWBWnLkVBfLf3wYpAaqloValoMMe0HIYiwOeQHSS4nFoKDehGzo/+ucRGE0h2wiOWqAGtSA+Brc4iucZGEkR1wDmUmKzxGWX+SkCKM5gnBIIAf7/3OcVMHI0UHI8my45ac4qYqRHIE9YUKzGji1/z/OQROMlDswsyiK749w0ATjDQVYIfPnIAdNMaywwkj5MNf92MdBU4wUCqLIDvCASXzZxUFTjOQAD6zx/2E7B00x1nQAqtFgEm+2cNAUIzmgFqsDnm9kpynG5QB4FDxex05TjCsK4Inw/mp2mmJciRCeDW8vZ6cpxpoNkQui60vYaYqxFkTo6eDyQnaaYEJFMbwyOjePnSYYb2WEHgqnZrNRFxOqjpEcAW+QHJvORhVMdIMEliOQm2SHprBRhElukkEdgdIo3TeRjSxMVqMULSRQmuU7+9iIwhQ3y9EcMjAdEzRHDFzXDItj6N85pSUAAFTx+v3ZVgHRAAAAAElFTkSuQmCC';
+const faviconBuffer = Buffer.from(FAVICON_BASE64, 'base64');
+
+app.get(['/api/favicon.ico', '/favicon.ico'], (req, res) => {
+  res.set('Content-Type', 'image/x-icon');
+  res.set('Cache-Control', 'public, max-age=86400');
+  res.send(faviconBuffer);
+});
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'bitcashs_secret_key_12345';
 const MONGO_URI = process.env.MONGO_URI;
