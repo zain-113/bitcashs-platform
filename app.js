@@ -2,24 +2,7 @@ window.API_BASE_URL = 'https://bitcashs-platform-production.up.railway.app';
 // ==========================================================================
 // MARKETS PAGE CONTROLLERS & REAL-TIME TABLE RENDERER
 // ==========================================================================
-window.MARKETS_DATA = [
-  { rank: 1, name: 'Bitcoin', symbol: 'BTC/USDT', icon: '₿', price: 67420.50, change: 2.45, high: 68200.00, low: 65800.00, volume: '$42.5B', cap: '$1.32T' },
-  { rank: 2, name: 'Ethereum', symbol: 'ETH/USDT', icon: 'Ξ', price: 3512.80, change: 1.82, high: 3580.00, low: 3420.00, volume: '$18.4B', cap: '$422.5B' },
-  { rank: 3, name: 'Solana', symbol: 'SOL/USDT', icon: '◎', price: 148.25, change: -3.12, high: 155.00, low: 144.50, volume: '$6.2B', cap: '$68.5B' },
-  { rank: 4, name: 'Binance Coin', symbol: 'BNB/USDT', icon: '🔶', price: 582.40, change: 0.95, high: 590.00, low: 574.00, volume: '$1.8B', cap: '$89.2B' },
-  { rank: 5, name: 'Ripple', symbol: 'XRP/USDT', icon: '✕', price: 0.6241, change: 0.95, high: 0.6450, low: 0.6120, volume: '$2.1B', cap: '$35.1B' },
-  { rank: 6, name: 'Dogecoin', symbol: 'DOGE/USDT', icon: 'Ð', price: 0.1248, change: -1.45, high: 0.1310, low: 0.1210, volume: '$1.4B', cap: '$18.2B' },
-  { rank: 7, name: 'Cardano', symbol: 'ADA/USDT', icon: '₳', price: 0.3842, change: 1.20, high: 0.3950, low: 0.3750, volume: '$780M', cap: '$13.8B' },
-  { rank: 8, name: 'Avalanche', symbol: 'AVAX/USDT', icon: '🔺', price: 28.60, change: 4.15, high: 29.40, low: 27.10, volume: '$640M', cap: '$11.3B' },
-  { rank: 9, name: 'TRON', symbol: 'TRX/USDT', icon: '⚡', price: 0.1345, change: 0.65, high: 0.1380, low: 0.1310, volume: '$520M', cap: '$11.9B' },
-  { rank: 10, name: 'Polkadot', symbol: 'DOT/USDT', icon: '●', price: 4.52, change: -2.10, high: 4.75, low: 4.45, volume: '$310M', cap: '$6.5B' },
-  { rank: 11, name: 'Chainlink', symbol: 'LINK/USDT', icon: '🔗', price: 11.85, change: 3.40, high: 12.20, low: 11.30, volume: '$450M', cap: '$7.2B' },
-  { rank: 12, name: 'Polygon', symbol: 'MATIC/USDT', icon: '🟣', price: 0.4210, change: -0.80, high: 0.4350, low: 0.4120, volume: '$290M', cap: '$4.1B' },
-  { rank: 13, name: 'Litecoin', symbol: 'LTC/USDT', icon: 'Ł', price: 68.30, change: 1.10, high: 69.80, low: 67.20, volume: '$380M', cap: '$5.1B' },
-  { rank: 14, name: 'Shiba Inu', symbol: 'SHIB/USDT', icon: '🐕', price: 0.0000142, change: 2.80, high: 0.0000148, low: 0.0000137, volume: '$410M', cap: '$8.3B' },
-  { rank: 15, name: 'NEAR Protocol', symbol: 'NEAR/USDT', icon: 'Ⓝ', price: 4.92, change: 5.20, high: 5.10, low: 4.65, volume: '$490M', cap: '$5.4B' },
-  { rank: 16, name: 'Uniswap', symbol: 'UNI/USDT', icon: '🦄', price: 6.75, change: -1.15, high: 7.00, low: 6.60, volume: '$210M', cap: '$4.0B' }
-];
+window.MARKETS_DATA = [];
 
 window.currentMarketFilter = 'all';
 window.favoriteMarkets = JSON.parse(localStorage.getItem('favorite_markets') || '["BTC/USDT", "ETH/USDT", "SOL/USDT"]');
@@ -48,6 +31,123 @@ window.toggleFavoriteMarket = function (pair, event) {
 };
 function toggleFavoriteMarket(pair, event) { window.toggleFavoriteMarket(pair, event); }
 
+window.fetchMarketsData = async function () {
+  try {
+    const apiUrl = 'https://bitcashs-platform-production.up.railway.app/api/markets';
+    const res = await fetch(apiUrl);
+    if (!res.ok) return;
+    const data = await res.json();
+
+    if (data && data.success && Array.isArray(data.markets) && data.markets.length > 0) {
+      window.MARKETS_DATA = data.markets;
+
+      // 1. Update Market Stats Cards
+      if (data.stats) {
+        const elGainers = document.getElementById('mk-gainers');
+        const elLosers = document.getElementById('mk-losers');
+        const elVolume = document.getElementById('mk-volume');
+        const elPairs = document.getElementById('mk-pairs');
+
+        if (elGainers) elGainers.textContent = data.stats.gainers !== undefined ? data.stats.gainers : data.markets.filter(m => (m.change || 0) >= 0).length;
+        if (elLosers) elLosers.textContent = data.stats.losers !== undefined ? data.stats.losers : data.markets.filter(m => (m.change || 0) < 0).length;
+        if (elVolume) elVolume.textContent = data.stats.volume || '$1.3B';
+        if (elPairs) elPairs.textContent = data.stats.pairs || data.markets.length;
+      }
+
+      // 2. Update Top Movers (24h)
+      const moversContainer = document.getElementById('top-movers-container');
+      if (moversContainer) {
+        const sortedGainers = [...data.markets].sort((a, b) => (b.change || 0) - (a.change || 0)).slice(0, 2);
+        const sortedLosers = [...data.markets].sort((a, b) => (a.change || 0) - (b.change || 0)).slice(0, 2);
+        const movers = [...sortedGainers, ...sortedLosers];
+        moversContainer.innerHTML = movers.map(m => {
+          const isPos = (m.change || 0) >= 0;
+          const coinSym = m.sym || (m.symbol ? m.symbol.replace('USDT', '') : m.name);
+          const priceStr = m.price < 1 ? `$${m.price.toFixed(4)}` : `$${m.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+          return `
+            <div class="stat-box" onclick="showPage('trade'); if (typeof changeSuitePair === 'function') changeSuitePair('${coinSym}');" style="cursor:pointer;" title="Click to trade ${m.name}">
+              <div class="stat-num ${isPos ? 'green' : 'red'}">${coinSym}</div>
+              <div class="stat-label">${isPos ? '+' : ''}${(m.change || 0).toFixed(2)}% (${priceStr})</div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // 3. Update Global Cache & Live Prices
+      window.liveMarketPrices = window.liveMarketPrices || {};
+      data.markets.forEach(m => {
+        const code = (m.sym || m.name || '').toLowerCase();
+        if (code === 'btc' || m.symbol === 'BTCUSDT') window.liveMarketPrices['bitcoin'] = { usd: m.price, usd_24h_change: m.change };
+        if (code === 'eth' || m.symbol === 'ETHUSDT') window.liveMarketPrices['ethereum'] = { usd: m.price, usd_24h_change: m.change };
+        if (code === 'sol' || m.symbol === 'SOLUSDT') window.liveMarketPrices['solana'] = { usd: m.price, usd_24h_change: m.change };
+        if (code === 'xrp' || m.symbol === 'XRPUSDT') window.liveMarketPrices['ripple'] = { usd: m.price, usd_24h_change: m.change };
+        if (code === 'doge' || m.symbol === 'DOGEUSDT') window.liveMarketPrices['dogecoin'] = { usd: m.price, usd_24h_change: m.change };
+      });
+
+      // 4. Update Trade Page Live Ticker & Order Book
+      const currentSym = (window.currentSuiteSymbol || 'BTC').toUpperCase();
+      const matched = data.markets.find(m => 
+        (m.sym && m.sym.toUpperCase() === currentSym) || 
+        (m.symbol && m.symbol.toUpperCase() === `${currentSym}USDT`) ||
+        (m.name && m.name.toUpperCase() === currentSym)
+      );
+
+      if (matched) {
+        window.currentSuitePrice = parseFloat(matched.price) || window.currentSuitePrice;
+        const spotInput = document.getElementById('spot-price');
+        if (spotInput && document.activeElement !== spotInput) {
+          spotInput.value = window.currentSuitePrice;
+        }
+
+        const spreadEl = document.getElementById('ob-spread');
+        if (spreadEl) {
+          const isPos = (matched.change || 0) >= 0;
+          const arrow = isPos ? '▲' : '▼';
+          const color = isPos ? '#34d399' : '#f87171';
+          const bg = isPos ? 'rgba(52,211,153,0.08)' : 'rgba(248,113,113,0.08)';
+          const border = isPos ? 'rgba(52,211,153,0.2)' : 'rgba(248,113,113,0.2)';
+          spreadEl.style.color = color;
+          spreadEl.style.background = bg;
+          spreadEl.style.borderColor = border;
+          spreadEl.textContent = `$${window.currentSuitePrice < 1 ? window.currentSuitePrice.toFixed(4) : window.currentSuitePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${arrow}`;
+        }
+
+        if (typeof window.generateOrderBook === 'function') {
+          window.generateOrderBook(window.currentSuitePrice);
+        }
+        if (typeof window.calcSpotTotal === 'function') {
+          window.calcSpotTotal();
+        }
+      }
+
+      // 5. Update Running Ticker Track
+      const tickerTrack = document.getElementById('crypto-ticker-track') || document.getElementById('ticker-track');
+      if (tickerTrack) {
+        let tickerHTML = '';
+        data.markets.forEach(m => {
+          const isPos = (m.change || 0) >= 0;
+          const colorClass = isPos ? 'green' : 'red';
+          const priceStr = m.price < 1 ? `$${m.price.toFixed(4)}` : `$${m.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+          const changeStr = (isPos ? '+' : '') + (m.change || 0).toFixed(2) + '%';
+          tickerHTML += `
+            <div class="ticker-item" style="display:inline-flex; align-items:center; gap:8px; margin-right:32px; font-size:13px; font-weight:700;">
+              <span style="color:#fde68a;">${m.sym || m.pair || m.name}/USDT</span>
+              <span style="color:#f8fafc; font-family:monospace;">${priceStr}</span>
+              <span class="${colorClass}">${changeStr}</span>
+            </div>
+          `;
+        });
+        tickerTrack.innerHTML = tickerHTML + tickerHTML;
+      }
+
+      // 6. Re-render Markets Table with live dynamic data
+      window.renderMarketsTable();
+    }
+  } catch (err) {
+    console.warn('fetchMarketsData error:', err);
+  }
+};
+
 window.renderMarketsTable = function () {
   const tbody = document.getElementById('markets-table-body');
   if (!tbody) return;
@@ -55,42 +155,30 @@ window.renderMarketsTable = function () {
   const searchInput = document.getElementById('market-search');
   const searchVal = (searchInput ? searchInput.value : '').toLowerCase().trim();
 
-  let list = window.MARKETS_DATA.slice();
+  let list = (window.MARKETS_DATA && window.MARKETS_DATA.length > 0) ? window.MARKETS_DATA.slice() : [];
 
-  // Sync live market prices if available
-  if (window.liveMarketPrices) {
-    list.forEach(m => {
-      if (m.symbol === 'BTC/USDT' && window.liveMarketPrices['bitcoin']) {
-        m.price = window.liveMarketPrices['bitcoin'].usd;
-        m.change = window.liveMarketPrices['bitcoin'].usd_24h_change;
-      } else if (m.symbol === 'ETH/USDT' && window.liveMarketPrices['ethereum']) {
-        m.price = window.liveMarketPrices['ethereum'].usd;
-        m.change = window.liveMarketPrices['ethereum'].usd_24h_change;
-      } else if (m.symbol === 'SOL/USDT' && window.liveMarketPrices['solana']) {
-        m.price = window.liveMarketPrices['solana'].usd;
-        m.change = window.liveMarketPrices['solana'].usd_24h_change;
-      } else if (m.symbol === 'XRP/USDT' && window.liveMarketPrices['ripple']) {
-        m.price = window.liveMarketPrices['ripple'].usd;
-        m.change = window.liveMarketPrices['ripple'].usd_24h_change;
-      } else if (m.symbol === 'DOGE/USDT' && window.liveMarketPrices['dogecoin']) {
-        m.price = window.liveMarketPrices['dogecoin'].usd;
-        m.change = window.liveMarketPrices['dogecoin'].usd_24h_change;
-      }
-    });
+  if (list.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:#94a3b8;">Loading live crypto markets...</td></tr>`;
+    return;
   }
 
   // Filter by Tab
   if (window.currentMarketFilter === 'gainers') {
-    list = list.filter(m => m.change >= 0).sort((a, b) => b.change - a.change);
+    list = list.filter(m => (m.change || 0) >= 0).sort((a, b) => (b.change || 0) - (a.change || 0));
   } else if (window.currentMarketFilter === 'losers') {
-    list = list.filter(m => m.change < 0).sort((a, b) => a.change - b.change);
+    list = list.filter(m => (m.change || 0) < 0).sort((a, b) => (a.change || 0) - (b.change || 0));
   } else if (window.currentMarketFilter === 'favorites') {
-    list = list.filter(m => window.favoriteMarkets.includes(m.symbol));
+    list = list.filter(m => window.favoriteMarkets.includes(m.pair || m.symbol || `${m.sym}/USDT`));
   }
 
   // Filter by Search Query
   if (searchVal) {
-    list = list.filter(m => m.name.toLowerCase().includes(searchVal) || m.symbol.toLowerCase().includes(searchVal));
+    list = list.filter(m => 
+      (m.name && m.name.toLowerCase().includes(searchVal)) || 
+      (m.sym && m.sym.toLowerCase().includes(searchVal)) ||
+      (m.symbol && m.symbol.toLowerCase().includes(searchVal)) ||
+      (m.pair && m.pair.toLowerCase().includes(searchVal))
+    );
   }
 
   if (list.length === 0) {
@@ -99,21 +187,28 @@ window.renderMarketsTable = function () {
   }
 
   tbody.innerHTML = list.map((m, idx) => {
-    const isFav = window.favoriteMarkets.includes(m.symbol);
-    const isPos = m.change >= 0;
+    const pairStr = m.pair || (m.symbol ? (m.symbol.includes('/') ? m.symbol : `${m.symbol.replace('USDT', '')}/USDT`) : `${m.sym}/USDT`);
+    const isFav = window.favoriteMarkets.includes(pairStr);
+    const isPos = (m.change || 0) >= 0;
     const changeColor = isPos ? '#34d399' : '#f87171';
     const changeSign = isPos ? '+' : '';
-    const formattedPrice = m.price < 1 ? `$${m.price.toFixed(4)}` : `$${m.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    const formattedHigh = m.high < 1 ? `$${m.high.toFixed(4)}` : `$${m.high.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    const formattedLow = m.low < 1 ? `$${m.low.toFixed(4)}` : `$${m.low.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const numPrice = parseFloat(m.price || m.lastPrice) || 0;
+    const numHigh = parseFloat(m.high) || (numPrice * 1.02);
+    const numLow = parseFloat(m.low) || (numPrice * 0.98);
+    const formattedPrice = numPrice < 1 ? `$${numPrice.toFixed(4)}` : `$${numPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const formattedHigh = numHigh < 1 ? `$${numHigh.toFixed(4)}` : `$${numHigh.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const formattedLow = numLow < 1 ? `$${numLow.toFixed(4)}` : `$${numLow.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const volStr = m.volume || m.vol || (m.volVal ? `$${(m.volVal / 1e6).toFixed(0)}M` : '$45M');
+    const capStr = m.cap || '$1.2B';
+    const coinSymbolCode = m.sym || m.symbol?.replace('/USDT', '').replace('USDT', '') || m.name;
 
     return `
       <tr style="border-bottom:1px solid rgba(255,255,255,0.05); transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
         <td style="padding:14px 12px; color:#64748b; font-size:12px; font-weight:700;">
-          <span onclick="toggleFavoriteMarket('${m.symbol}', event)" style="cursor:pointer; font-size:14px; margin-right:8px;" title="Toggle Favorite">
+          <span onclick="toggleFavoriteMarket('${pairStr}', event)" style="cursor:pointer; font-size:14px; margin-right:8px;" title="Toggle Favorite">
             ${isFav ? '⭐' : '☆'}
           </span>
-          ${idx + 1}
+          ${m.rank || (idx + 1)}
         </td>
         <td style="padding:14px 12px;">
           <div style="display:flex; align-items:center; gap:10px;">
@@ -122,18 +217,18 @@ window.renderMarketsTable = function () {
             </div>
             <div>
               <div style="font-weight:800; color:#f8fafc; font-size:14px;">${m.name}</div>
-              <div style="font-size:12px; color:#94a3b8; font-weight:600;">${m.symbol}</div>
+              <div style="font-size:12px; color:#94a3b8; font-weight:600;">${pairStr}</div>
             </div>
           </div>
         </td>
         <td style="padding:14px 12px; font-family:monospace; font-weight:800; color:#f8fafc; font-size:14px;">${formattedPrice}</td>
-        <td style="padding:14px 12px; font-weight:800; color:${changeColor}; font-size:13px;">${changeSign}${m.change.toFixed(2)}%</td>
+        <td style="padding:14px 12px; font-weight:800; color:${changeColor}; font-size:13px;">${changeSign}${(m.change || 0).toFixed(2)}%</td>
         <td style="padding:14px 12px; font-family:monospace; color:#cbd5e1; font-size:13px;">${formattedHigh}</td>
         <td style="padding:14px 12px; font-family:monospace; color:#cbd5e1; font-size:13px;">${formattedLow}</td>
-        <td style="padding:14px 12px; color:#94a3b8; font-size:13px;">${m.volume}</td>
-        <td style="padding:14px 12px; color:#94a3b8; font-size:13px;">${m.cap}</td>
+        <td style="padding:14px 12px; color:#94a3b8; font-size:13px;">${volStr}</td>
+        <td style="padding:14px 12px; color:#94a3b8; font-size:13px;">${capStr}</td>
         <td style="padding:14px 12px;">
-          <button onclick="showPage('trade')"
+          <button onclick="showPage('trade'); if (typeof changeSuitePair === 'function') changeSuitePair('${coinSymbolCode}');"
             style="padding:6px 16px; background:rgba(234,179,8,0.15); border:1px solid rgba(234,179,8,0.4); border-radius:8px; color:#facc15; font-size:12px; font-weight:800; cursor:pointer; transition:0.2s;"
             onmouseover="this.style.background='linear-gradient(135deg, #facc15, #ca8a04)'; this.style.color='#000';"
             onmouseout="this.style.background='rgba(234,179,8,0.15)'; this.style.color='#facc15';">
@@ -144,6 +239,20 @@ window.renderMarketsTable = function () {
     `;
   }).join('');
 };
+
+window.fetchLiveMarkets = window.fetchMarketsData;
+window.fetchLivePrices = window.fetchMarketsData;
+
+// Start continuous polling every 3.5 seconds
+if (window.marketPollingInterval) clearInterval(window.marketPollingInterval);
+window.marketPollingInterval = setInterval(() => {
+  if (typeof window.fetchMarketsData === 'function') window.fetchMarketsData();
+}, 3500);
+
+// Run immediately on script load
+setTimeout(() => {
+  if (typeof window.fetchMarketsData === 'function') window.fetchMarketsData();
+}, 100);
 function renderMarketsTable() { window.renderMarketsTable(); }
 
 
