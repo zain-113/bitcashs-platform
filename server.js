@@ -23,7 +23,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const mongoose = require('mongoose');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
+const resend = new Resend(process.env.RESEND_API_KEY);
 const cloudinary = require('cloudinary').v2;
 
 // ========== CLOUDINARY CONFIGURATION ==========
@@ -53,30 +54,22 @@ async function uploadToCloudinary(fileData, folder = 'bitcashs_uploads') {
 }
 
 // ========== NODEMAILER SMTP TRANSPORTER CONFIGURATION ==========
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '465'),
-  secure: parseInt(process.env.SMTP_PORT || '465') === 465,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS
-  }
-});
+
 
 async function sendMailHelper({ to, subject, text, html }) {
-  if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+  if (process.env.RESEND_API_KEY) {
     try {
-      const info = await transporter.sendMail({
-        from: `"BitCashs Exchange" <${process.env.SMTP_USER}>`,
+      const info = await resend.emails.send({
+        from: 'BitCashs Exchange <onboarding@resend.dev>',
         to,
         subject,
         text,
         html
       });
-      console.log(`[SMTP REAL EMAIL SENT] To: ${to} | Message ID: ${info.messageId}`);
+      console.log(`[RESEND EMAIL SENT] To: ${to} | ID: ${info?.data?.id || 'N/A'}`);
       return true;
     } catch (err) {
-      console.error(`[SMTP EMAIL ERROR] Could not send email to ${to}:`, err.message);
+      console.error(`[RESEND EMAIL ERROR] Could not send email to ${to}:`, err.message);
       return false;
     }
   } else {
@@ -115,9 +108,9 @@ mongoose.connection.on('connected', async () => {
       await Deposit.updateMany(
         { $or: [{ proofImage: { $regex: 'demoProofSlip' } }, { receipt: { $regex: 'demoProofSlip' } }] },
         { $set: { proofImage: '', receipt: '' } }
-      ).catch(() => {});
+      ).catch(() => { });
     }
-  } catch (e) {}
+  } catch (e) { }
 });
 
 // Automatic Admin Seeder on DB Connection
@@ -231,7 +224,7 @@ const UserSchema = new mongoose.Schema({
   },
   userId: {
     type: String,
-    default: function() { return 'IM' + Math.floor(1000 + Math.random() * 9000); }
+    default: function () { return 'IM' + Math.floor(1000 + Math.random() * 9000); }
   },
   referredBy: {
     type: String,
@@ -239,7 +232,7 @@ const UserSchema = new mongoose.Schema({
   },
   referralCode: {
     type: String,
-    default: function() { return (this.username || this.fullName || 'BIT' + Math.floor(1000 + Math.random() * 9000)).toLowerCase().replace(/[^a-z0-9]/g, ''); }
+    default: function () { return (this.username || this.fullName || 'BIT' + Math.floor(1000 + Math.random() * 9000)).toLowerCase().replace(/[^a-z0-9]/g, ''); }
   },
   role: {
     type: String,
@@ -286,7 +279,7 @@ const UserSchema = new mongoose.Schema({
 });
 
 // Safe pre-save hook that prevents double-hashing
-UserSchema.pre('save', async function() {
+UserSchema.pre('save', async function () {
   if (!this.isModified('password')) return;
   // Only hash if NOT already hashed (bcrypt hashes start with $2a$ or $2b$)
   if (this.password && !this.password.startsWith('$2a$') && !this.password.startsWith('$2b$')) {
@@ -361,17 +354,20 @@ const ContactMessageSchema = new mongoose.Schema({
 const ContactMessage = mongoose.models.ContactMessage || mongoose.model('ContactMessage', ContactMessageSchema);
 
 // ========== NODEMAILER SMTP & OTP VERIFICATION LOGIC ==========
+// ========== RESEND EMAIL OTP VERIFICATION LOGIC ==========
 const pendingOTPs = {};
 
 async function sendEmailOTP(email, otpCode) {
   console.log(`[OTP DISPATCH] Send 6-digit OTP code ${otpCode} to email: ${email}`);
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.log(`⚡ [SMTP NOTICE] SMTP credentials not set in .env. OTP Code for ${email} is: ${otpCode}`);
+
+  if (!process.env.RESEND_API_KEY) {
+    console.log(`⚡ [RESEND NOTICE] RESEND_API_KEY not set in .env. OTP Code for ${email} is: ${otpCode}`);
     return true;
   }
+
   try {
-    await transporter.sendMail({
-      from: `"BitCashs Security" <${process.env.SMTP_USER}>`,
+    await resend.emails.send({
+      from: 'BitCashs Security <onboarding@resend.dev>',
       to: email,
       subject: 'BitCashs Account Signup Verification OTP',
       html: `
@@ -383,10 +379,10 @@ async function sendEmailOTP(email, otpCode) {
         </div>
       `
     });
-    console.log(`✅ [SMTP SUCCESS] OTP email dispatched to ${email}`);
+    console.log(`✅ [RESEND SUCCESS] OTP email dispatched to ${email}`);
     return true;
   } catch (err) {
-    console.warn(`⚠️ [SMTP ERROR] Failed to send email via SMTP: ${err.message}. Local OTP code is: ${otpCode}`);
+    console.warn(`⚠️ [RESEND ERROR] Failed to send email: ${err.message}. Local OTP code is: ${otpCode}`);
     return true;
   }
 }
@@ -456,7 +452,7 @@ app.get('/api/market/prices', async (req, res) => {
       const name = sym.replace('USDT', '');
       const t = cachedTickerData[sym];
       const def = defaultMarketCache.find(d => d.symbol === sym) || {};
-      
+
       const priceVal = t ? parseFloat(t.lastPrice) : (def.price || 100);
       const changeVal = t ? parseFloat(t.priceChangePercent) : (def.change || 0);
       const isUp = changeVal >= 0;
@@ -983,7 +979,7 @@ app.get('/api/user/profile', async (req, res) => {
       try {
         const decoded = jwt.verify(token, JWT_SECRET);
         userId = decoded.id;
-      } catch (e) {}
+      } catch (e) { }
     }
 
     if (!userId && !userEmail) {
@@ -1030,7 +1026,7 @@ app.put('/api/user/profile', async (req, res) => {
       try {
         const decoded = jwt.verify(token, JWT_SECRET);
         userId = decoded.id;
-      } catch (e) {}
+      } catch (e) { }
     }
 
     const query = userId ? { _id: userId } : { email: (email || '').toLowerCase() };
@@ -1090,7 +1086,7 @@ app.post(['/api/trade/binary-place', '/api/trade/binary-execute', '/api/wallet/b
       try {
         const decoded = jwt.verify(token, JWT_SECRET);
         userId = decoded.id;
-      } catch (e) {}
+      } catch (e) { }
     }
 
     let user = null;
@@ -1245,7 +1241,7 @@ app.post(['/api/trade/binary-settle', '/api/wallet/binary-settle'], async (req, 
       try {
         const decoded = jwt.verify(token, JWT_SECRET);
         userId = decoded.id;
-      } catch (e) {}
+      } catch (e) { }
     }
 
     let user = null;
@@ -1262,7 +1258,7 @@ app.post(['/api/trade/binary-settle', '/api/wallet/binary-settle'], async (req, 
     const { amount, profitPct, pair, direction, duration } = req.body;
     const numAmount = parseFloat(amount) || 0;
     const numProfitPct = parseFloat(profitPct) || 10;
-    
+
     // Exact 1% Platform Trading Fee calculated ONCE per trade: fee = tradeAmount * 0.01
     const grossProfit = parseFloat(((numAmount * numProfitPct) / 100).toFixed(2));
     const platformFee = parseFloat((numAmount * 0.01).toFixed(2)); // Exactly 1% fee (e.g. $100 -> $1.00)
@@ -1292,7 +1288,7 @@ app.post(['/api/trade/binary-settle', '/api/wallet/binary-settle'], async (req, 
     user.transactions = user.transactions || [];
 
     // Find if there is a pending placement transaction to update cleanly without creating duplicates
-    const pendingIdx = user.transactions.findIndex(t => 
+    const pendingIdx = user.transactions.findIndex(t =>
       (t.type || '').toLowerCase().includes('placed') && (t.status === 'Pending' || t.status === 'Active')
     );
 
@@ -1386,7 +1382,7 @@ app.post(['/api/admin/user/trade-outcome', '/api/admin/users/trade-outcome', '/a
     if (!['DEFAULT', 'WIN', 'LOSS', 'FORCE_WIN', 'FORCE_LOSS'].includes(targetOutcome)) {
       targetOutcome = 'DEFAULT';
     }
-    
+
     let query = {};
     if (userId) query._id = userId;
     else if (email) query.email = email.toLowerCase();
@@ -1585,7 +1581,7 @@ app.post(['/api/admin/users/update-balance', '/api/admin/user/balance', '/api/ad
   try {
     const { userId, id, email, newBalance, balance } = req.body;
     const targetBal = parseFloat(newBalance !== undefined ? newBalance : balance);
-    
+
     if (isNaN(targetBal)) {
       return res.status(400).json({ success: false, message: 'Valid balance number required' });
     }
@@ -1750,7 +1746,7 @@ app.post(['/api/wallet/deposit', '/api/deposit/submit', '/api/user/deposit'], as
       try {
         const decoded = jwt.verify(token, JWT_SECRET);
         userId = decoded.id;
-      } catch (e) {}
+      } catch (e) { }
     }
 
     let user = null;
@@ -2042,7 +2038,7 @@ app.post('/api/kyc/submit', async (req, res) => {
       try {
         const decoded = jwt.verify(token, JWT_SECRET);
         userId = decoded.id;
-      } catch (e) {}
+      } catch (e) { }
     }
 
     if (!userId && !userEmail) {
@@ -2215,7 +2211,7 @@ app.get(['/api/user/wallet', '/api/wallet/data', '/api/wallet/summary'], async (
       try {
         const decoded = jwt.verify(token, JWT_SECRET);
         userId = decoded.id;
-      } catch (e) {}
+      } catch (e) { }
     }
 
     let user = null;
@@ -2244,7 +2240,7 @@ app.get(['/api/user/wallet', '/api/wallet/data', '/api/wallet/summary'], async (
       user.transactions.forEach(t => {
         const tDate = new Date(t.createdAt || Date.now());
         const tType = (t.type || '').toLowerCase();
-        
+
         // Accumulate Net Profit ONLY on winning settlements (strictly exclude stake)
         if (tType.includes('win') || tType.includes('settlement (win)')) {
           let np = 0;
@@ -2368,8 +2364,8 @@ app.get(['/api/user/wallet', '/api/wallet/data', '/api/wallet/summary'], async (
         dailyEarningsUsd: dailyEarnings,
         totalProfitUsd: totalProfit > 0 ? totalProfit : 0,
         activePlansCount: (user.activePlans && user.activePlans.length) || user.activePlansCount || 0,
-      activePlans: user.activePlans || [],
-      latestActivePlan: (user.activePlans && user.activePlans.length > 0) ? user.activePlans[user.activePlans.length - 1] : null,
+        activePlans: user.activePlans || [],
+        latestActivePlan: (user.activePlans && user.activePlans.length > 0) ? user.activePlans[user.activePlans.length - 1] : null,
         totalInvestedUsd: user.totalInvested || 0,
         totalDepositedUsd: totalDepositsSum,
         trc20Address: 'TRBuYjnRoj9jM3WheB2k4X1t3SdxsYGr2j'
@@ -2403,7 +2399,7 @@ app.post(['/api/wallet/withdraw', '/api/user/withdraw'], async (req, res) => {
       try {
         const decoded = jwt.verify(token, JWT_SECRET);
         userId = decoded.id;
-      } catch (e) {}
+      } catch (e) { }
     }
 
     let user = null;
@@ -2440,7 +2436,7 @@ app.post(['/api/wallet/withdraw', '/api/user/withdraw'], async (req, res) => {
 
     // 1. Immediately deduct amount from user balance
     user.balance = parseFloat((currentBalance - numAmount).toFixed(2));
-    
+
     // 2. Add record to User's Transaction History (Status: Pending, 0% Fee)
     user.transactions = user.transactions || [];
     user.transactions.push({
