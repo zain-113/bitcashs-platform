@@ -1,4 +1,6 @@
-window.API_BASE_URL = 'https://bitcashs-platform-production.up.railway.app';
+window.API_BASE_URL = (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.port === '5000' || window.location.protocol === 'file:'))
+  ? 'http://localhost:5000'
+  : 'https://bitcashs-platform-production.up.railway.app';
 // ==========================================================================
 // MARKETS PAGE CONTROLLERS & REAL-TIME TABLE RENDERER
 // ==========================================================================
@@ -86,8 +88,8 @@ window.fetchMarketsData = async function () {
 
       // 4. Update Trade Page Live Ticker & Order Book
       const currentSym = (window.currentSuiteSymbol || 'BTC').toUpperCase();
-      const matched = data.markets.find(m => 
-        (m.sym && m.sym.toUpperCase() === currentSym) || 
+      const matched = data.markets.find(m =>
+        (m.sym && m.sym.toUpperCase() === currentSym) ||
         (m.symbol && m.symbol.toUpperCase() === `${currentSym}USDT`) ||
         (m.name && m.name.toUpperCase() === currentSym)
       );
@@ -173,8 +175,8 @@ window.renderMarketsTable = function () {
 
   // Filter by Search Query
   if (searchVal) {
-    list = list.filter(m => 
-      (m.name && m.name.toLowerCase().includes(searchVal)) || 
+    list = list.filter(m =>
+      (m.name && m.name.toLowerCase().includes(searchVal)) ||
       (m.sym && m.sym.toLowerCase().includes(searchVal)) ||
       (m.symbol && m.symbol.toLowerCase().includes(searchVal)) ||
       (m.pair && m.pair.toLowerCase().includes(searchVal))
@@ -879,6 +881,18 @@ window.fetchWalletData = async function () {
       } catch (e) { }
     }
 
+    // Update Treasury Deposit Address & QR
+    if (w.trc20Address) {
+      const depAddressInput = document.getElementById('deposit-page-address');
+      if (depAddressInput) depAddressInput.value = w.trc20Address;
+      const walletTransAddressInput = document.getElementById('wallet-trans-address');
+      if (walletTransAddressInput) walletTransAddressInput.value = w.trc20Address;
+    }
+    if (w.trc20QrCode) {
+      const depQrImg = document.getElementById('deposit-page-qr-img');
+      if (depQrImg) depQrImg.src = w.trc20QrCode;
+    }
+
     // Update Binary Options Stake Available Balances
     if (typeof window.updateOptionAvailableBalance === 'function') window.updateOptionAvailableBalance();
 
@@ -1216,26 +1230,248 @@ window.toggleUserTradeOutcome = async function (userId, currentOutcome) {
   }
 };
 
+window.selectedAdminQrBase64 = null;
+
+window.handleAdminQrFileSelect = function (event) {
+  const file = (event && event.target && event.target.files && event.target.files[0]) ||
+    (document.getElementById('qrCodeInput')?.files?.[0]) ||
+    (document.getElementById('adm-setting-qr-file')?.files?.[0]);
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    window.selectedAdminQrBase64 = e.target.result;
+    const previewEls = [
+      document.getElementById('qr-preview'),
+      document.getElementById('adm-setting-qr-preview')
+    ];
+    previewEls.forEach(el => {
+      if (el) el.src = e.target.result;
+    });
+
+    const statusEl = document.getElementById('adm-setting-qr-status');
+    if (statusEl) statusEl.textContent = `New QR Selected: ${file.name}`;
+    const nameEl = document.getElementById('adm-setting-qr-filename');
+    if (nameEl) nameEl.textContent = `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+  };
+  reader.readAsDataURL(file);
+};
+function handleAdminQrFileSelect(event) { window.handleAdminQrFileSelect(event); }
+
 window.saveAdminSettings = async function () {
-  const treasury = document.getElementById('adm-setting-treasury')?.value || 'TRBuYjnRoj9jM3WheB2k4X1t3SdxsYGr2j';
+  const treasury = document.getElementById('adm-setting-treasury')?.value?.trim() ||
+    document.getElementById('treasuryAddress')?.value?.trim() ||
+    'TRBuYjnRoj9jM3WheB2k4X1t3SdxsYGr2j';
   const globalOutcome = document.getElementById('adm-setting-global-outcome')?.value || 'LOSS';
+  const qrCode = window.selectedAdminQrBase64 || '';
+
+  const saveBtn = document.querySelector("button[onclick*='saveAdminSettings']");
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving Platform Settings...';
+  }
 
   try {
+    const payload = {
+      trc20Address: treasury,
+      treasuryAddress: treasury,
+      globalTradeOutcome: globalOutcome
+    };
+    if (qrCode) {
+      payload.qrCodeBase64 = qrCode;
+      payload.qrCode = qrCode;
+      payload.qrCodeUrl = qrCode;
+      payload.treasuryQrCode = qrCode;
+      payload.qrImage = qrCode;
+    }
+
     const res = await fetch(`${window.API_BASE_URL}/api/admin/settings`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ treasuryAddress: treasury, globalTradeOutcome: globalOutcome })
+      body: JSON.stringify(payload)
     });
-    const data = await res.json();
-    if (res.ok && data.success) {
-      window.showTradeToast(`⚙️ Settings Saved! Global Outcome: ${globalOutcome}, Deposit/Withdraw Fees: 0%`, 'success');
+
+    let data = {};
+    try {
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      }
+    } catch (e) { }
+
+    if (res.ok && (data.success || res.status === 200)) {
+      window.selectedAdminQrBase64 = null;
+      window.showTradeToast(`⚙️ Platform & Wallet Settings Saved Successfully!`, 'success');
+
+      // Update all related address & QR fields across the platform
+      const activeTreasury = data.trc20Address || data.treasuryAddress || treasury;
+      const activeQr = data.qrCodeUrl || data.treasuryQrCode || qrCode || '';
+
+      // Persist to local storage for immediate zero-latency hydration
+      if (activeTreasury) localStorage.setItem('bitcashs_treasury_address', activeTreasury);
+      if (activeQr) localStorage.setItem('bitcashs_treasury_qr', activeQr);
+
+      const admTreasuryInput = document.getElementById('adm-setting-treasury') || document.getElementById('treasuryAddress');
+      if (admTreasuryInput) admTreasuryInput.value = activeTreasury;
+
+      const depAddressInput = document.getElementById('deposit-page-address');
+      if (depAddressInput) depAddressInput.value = activeTreasury;
+
+      const walletTransAddressInput = document.getElementById('wallet-trans-address');
+      if (walletTransAddressInput) walletTransAddressInput.value = activeTreasury;
+
+      if (activeQr) {
+        const admQrPreviews = [
+          document.getElementById('qr-preview'),
+          document.getElementById('adm-setting-qr-preview')
+        ];
+        admQrPreviews.forEach(el => { if (el) el.src = activeQr; });
+
+        const depQrImg = document.getElementById('deposit-page-qr-img');
+        if (depQrImg) depQrImg.src = activeQr;
+
+        const statusEl = document.getElementById('adm-setting-qr-status');
+        if (statusEl) statusEl.textContent = 'Official TRC20 QR Code active';
+
+        const nameEl = document.getElementById('adm-setting-qr-filename');
+        if (nameEl) nameEl.textContent = 'Cloudinary URL active';
+      }
     } else {
       window.showTradeToast(data.message || 'Failed to save settings', 'error');
     }
   } catch (err) {
+    console.error('saveAdminSettings error:', err);
     window.showTradeToast('Settings saved locally!', 'info');
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save Platform Settings';
+    }
   }
 };
+function saveAdminSettings() { window.saveAdminSettings(); }
+
+window.loadWalletSettings = async function () {
+  // 1. Instant hydration from localStorage if present
+  try {
+    const cachedAddress = localStorage.getItem('bitcashs_treasury_address');
+    const cachedQr = localStorage.getItem('bitcashs_treasury_qr');
+    if (cachedAddress) {
+      const admTreasuryInput = document.getElementById('adm-setting-treasury') || document.getElementById('treasuryAddress');
+      if (admTreasuryInput) admTreasuryInput.value = cachedAddress;
+      const depAddressInput = document.getElementById('deposit-page-address');
+      if (depAddressInput) depAddressInput.value = cachedAddress;
+      const walletTransAddressInput = document.getElementById('wallet-trans-address');
+      if (walletTransAddressInput) walletTransAddressInput.value = cachedAddress;
+    }
+    if (cachedQr) {
+      const admQrPreviews = [
+        document.getElementById('qr-preview'),
+        document.getElementById('adm-setting-qr-preview')
+      ];
+      admQrPreviews.forEach(el => { if (el) el.src = cachedQr; });
+      const depQrImg = document.getElementById('deposit-page-qr-img');
+      if (depQrImg) depQrImg.src = cachedQr;
+    }
+  } catch (e) { }
+
+  // 2. Fetch authoritative fresh settings from server
+  try {
+    const res = await fetch(`${window.API_BASE_URL}/api/admin/settings`);
+    if (!res.ok) return;
+
+    let data = {};
+    try {
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      }
+    } catch (e) { return; }
+
+    if (data && data.success) {
+      const activeTreasury = data.trc20Address || data.treasuryAddress || 'TRBuYjnRoj9jM3WheB2k4X1t3SdxsYGr2j';
+      const activeQr = data.qrCodeUrl || data.treasuryQrCode || '';
+
+      if (activeTreasury) localStorage.setItem('bitcashs_treasury_address', activeTreasury);
+      if (activeQr) localStorage.setItem('bitcashs_treasury_qr', activeQr);
+
+      // 1. Admin Inputs & Preview
+      const admTreasuryInput = document.getElementById('adm-setting-treasury') || document.getElementById('treasuryAddress');
+      if (admTreasuryInput) admTreasuryInput.value = activeTreasury;
+
+      const outcomeSelect = document.getElementById('adm-setting-global-outcome');
+      if (outcomeSelect && data.globalTradeOutcome) outcomeSelect.value = data.globalTradeOutcome;
+
+      const admQrPreviews = [
+        document.getElementById('qr-preview'),
+        document.getElementById('adm-setting-qr-preview')
+      ];
+      if (activeQr) {
+        admQrPreviews.forEach(el => { if (el) el.src = activeQr; });
+      }
+
+      // 2. User Deposit Page & Modal Address & QR Code
+      const depAddressInput = document.getElementById('deposit-page-address');
+      if (depAddressInput) depAddressInput.value = activeTreasury;
+
+      const walletTransAddressInput = document.getElementById('wallet-trans-address');
+      if (walletTransAddressInput) walletTransAddressInput.value = activeTreasury;
+
+      if (activeQr) {
+        const depQrImg = document.getElementById('deposit-page-qr-img');
+        if (depQrImg) depQrImg.src = activeQr;
+      }
+    }
+  } catch (err) {
+    console.warn('loadWalletSettings error:', err);
+  }
+};
+function loadWalletSettings() { window.loadWalletSettings(); }
+
+window.copyDepositAddress = function () {
+  const addrInput = document.getElementById('wallet-trans-address') || document.getElementById('deposit-page-address');
+  if (addrInput && addrInput.value) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(addrInput.value).then(() => {
+        window.showTradeToast('📋 Deposit Address copied to clipboard!', 'success');
+      }).catch(() => {
+        addrInput.select();
+        document.execCommand('copy');
+        window.showTradeToast('📋 Deposit Address copied to clipboard!', 'success');
+      });
+    } else {
+      addrInput.select();
+      document.execCommand('copy');
+      window.showTradeToast('📋 Deposit Address copied to clipboard!', 'success');
+    }
+  }
+};
+function copyDepositAddress() { window.copyDepositAddress(); }
+
+window.copyDepositPageAddress = function () {
+  const addrInput = document.getElementById('deposit-page-address') || document.getElementById('wallet-trans-address');
+  if (addrInput && addrInput.value) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(addrInput.value).then(() => {
+        window.showTradeToast('📋 Treasury Address copied to clipboard!', 'success');
+      }).catch(() => {
+        addrInput.select();
+        document.execCommand('copy');
+        window.showTradeToast('📋 Treasury Address copied to clipboard!', 'success');
+      });
+    } else {
+      addrInput.select();
+      document.execCommand('copy');
+      window.showTradeToast('📋 Treasury Address copied to clipboard!', 'success');
+    }
+  }
+};
+function copyDepositPageAddress() { window.copyDepositPageAddress(); }
+
+// Trigger auto-load on initial script load
+setTimeout(() => {
+  if (typeof window.loadWalletSettings === 'function') window.loadWalletSettings();
+}, 100);
 
 
 
@@ -1990,8 +2226,14 @@ window.showPage = function (pageId) {
             } catch (e) { }
           }
         }
+        if (pageId === 'deposit-page' || pageId === 'deposit' || pageId === 'wallet') {
+          if (typeof window.loadWalletSettings === 'function') window.loadWalletSettings();
+        }
         if (pageId === 'markets' && typeof window.fetchLiveMarkets === 'function') window.fetchLiveMarkets();
-        if ((pageId === 'admin-panel-view' || pageId === 'admin-control-panel' || pageId === 'admin') && typeof window.fetchAdminDashboard === 'function') window.fetchAdminDashboard();
+        if ((pageId === 'admin-panel-view' || pageId === 'admin-control-panel' || pageId === 'admin') && typeof window.fetchAdminDashboard === 'function') {
+          window.fetchAdminDashboard();
+          if (typeof window.loadWalletSettings === 'function') window.loadWalletSettings();
+        }
       } catch (err) {
         console.warn(`Data fetch error for ${pageId}:`, err);
       }
@@ -2922,6 +3164,36 @@ async function fetchAdminDashboard() {
         if (typeof window.fetchAdminTrades === 'function') window.fetchAdminTrades();
       }
     }
+
+    // 4. Fetch Platform & Wallet Settings
+    try {
+      const resSettings = await fetch(`${window.API_BASE_URL}/api/admin/settings`, { headers });
+      if (resSettings.ok) {
+        const dataSet = await resSettings.json();
+        if (dataSet.success) {
+          const treasuryInput = document.getElementById('adm-setting-treasury');
+          if (treasuryInput && dataSet.treasuryAddress) {
+            treasuryInput.value = dataSet.treasuryAddress;
+          }
+          const outcomeSelect = document.getElementById('adm-setting-global-outcome');
+          if (outcomeSelect && dataSet.globalTradeOutcome) {
+            outcomeSelect.value = dataSet.globalTradeOutcome;
+          }
+          if (dataSet.treasuryQrCode) {
+            const qrPreview = document.getElementById('adm-setting-qr-preview');
+            if (qrPreview) qrPreview.src = dataSet.treasuryQrCode;
+            const depQrImg = document.getElementById('deposit-page-qr-img');
+            if (depQrImg) depQrImg.src = dataSet.treasuryQrCode;
+          }
+          if (dataSet.treasuryAddress) {
+            const depAddressInput = document.getElementById('deposit-page-address');
+            if (depAddressInput) depAddressInput.value = dataSet.treasuryAddress;
+            const walletTransAddressInput = document.getElementById('wallet-trans-address');
+            if (walletTransAddressInput) walletTransAddressInput.value = dataSet.treasuryAddress;
+          }
+        }
+      }
+    } catch (e) { }
 
   } catch (err) {
     console.error('Fetch Admin Dashboard Error:', err);

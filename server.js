@@ -301,7 +301,10 @@ const User = mongoose.models.User || mongoose.model('User', UserSchema);
 // Persistent System Settings Schema (Global Win/Loss Outcome, Platform Total Earnings & 0% Deposit/Withdrawal Fees)
 const SettingsSchema = new mongoose.Schema({
   key: { type: String, unique: true, default: 'global_config' },
+  trc20Address: { type: String, default: 'TRBuYjnRoj9jM3WheB2k4X1t3SdxsYGr2j' },
   treasuryAddress: { type: String, default: 'TRBuYjnRoj9jM3WheB2k4X1t3SdxsYGr2j' },
+  qrCodeUrl: { type: String, default: '' },
+  treasuryQrCode: { type: String, default: '' },
   depositFee: { type: Number, default: 0 },
   withdrawFee: { type: Number, default: 0 },
   platformTotalEarnings: { type: Number, default: 0 },
@@ -1455,23 +1458,31 @@ app.post(['/api/admin/users/balance', '/api/admin/user/balance', '/api/admin/use
   }
 });
 
-// Admin Settings: Get & Update Global Outcome & Fees & Revenue
-app.get(['/api/admin/settings', '/api/admin/trade-settings'], async (req, res) => {
+// Public & Admin Settings: Get current TRC20 Address & Cloudinary QR Code URL
+app.get(['/api/wallet-settings', '/api/admin/wallet-settings', '/api/admin/settings', '/api/admin/trade-settings', '/api/wallet/config'], async (req, res) => {
   try {
     let config = await SystemSettings.findOne({ key: 'global_config' });
     if (!config) {
       config = await SystemSettings.create({
         key: 'global_config',
+        trc20Address: 'TRBuYjnRoj9jM3WheB2k4X1t3SdxsYGr2j',
         treasuryAddress: 'TRBuYjnRoj9jM3WheB2k4X1t3SdxsYGr2j',
+        qrCodeUrl: '',
+        treasuryQrCode: '',
         depositFee: 0,
         withdrawFee: 0,
         platformTotalEarnings: 0,
         globalTradeOutcome: 'LOSS'
       });
     }
+    const currentAddress = config.trc20Address || config.treasuryAddress || 'TRBuYjnRoj9jM3WheB2k4X1t3SdxsYGr2j';
+    const currentQr = config.qrCodeUrl || config.treasuryQrCode || '';
     res.json({
       success: true,
-      treasuryAddress: config.treasuryAddress || 'TRBuYjnRoj9jM3WheB2k4X1t3SdxsYGr2j',
+      trc20Address: currentAddress,
+      treasuryAddress: currentAddress,
+      qrCodeUrl: currentQr,
+      treasuryQrCode: currentQr,
       depositFee: 0,
       withdrawFee: 0,
       platformTotalEarnings: config.platformTotalEarnings || 0,
@@ -1480,7 +1491,10 @@ app.get(['/api/admin/settings', '/api/admin/trade-settings'], async (req, res) =
   } catch (err) {
     res.json({
       success: true,
+      trc20Address: 'TRBuYjnRoj9jM3WheB2k4X1t3SdxsYGr2j',
       treasuryAddress: 'TRBuYjnRoj9jM3WheB2k4X1t3SdxsYGr2j',
+      qrCodeUrl: '',
+      treasuryQrCode: '',
       depositFee: 0,
       withdrawFee: 0,
       platformTotalEarnings: 0,
@@ -1489,14 +1503,41 @@ app.get(['/api/admin/settings', '/api/admin/trade-settings'], async (req, res) =
   }
 });
 
-app.post(['/api/admin/settings', '/api/admin/trade-settings'], async (req, res) => {
+app.post(['/api/admin/settings', '/api/admin/wallet-settings', '/api/admin/trade-settings'], async (req, res) => {
   try {
-    const { treasuryAddress, globalTradeOutcome } = req.body;
+    const { trc20Address, treasuryAddress, qrCodeBase64, qrCode, qrCodeUrl, treasuryQrCode, qrImage, globalTradeOutcome } = req.body;
     let config = await SystemSettings.findOne({ key: 'global_config' });
     if (!config) {
       config = new SystemSettings({ key: 'global_config' });
     }
-    if (treasuryAddress) config.treasuryAddress = treasuryAddress.trim();
+
+    const newAddress = trc20Address || treasuryAddress;
+    if (newAddress && typeof newAddress === 'string') {
+      config.trc20Address = newAddress.trim();
+      config.treasuryAddress = newAddress.trim();
+    }
+
+    const incomingQr = qrCodeBase64 || qrCode || qrCodeUrl || treasuryQrCode || qrImage;
+    if (incomingQr && typeof incomingQr === 'string') {
+      let uploadedQr = incomingQr;
+      if (!incomingQr.startsWith('http://') && !incomingQr.startsWith('https://')) {
+        try {
+          const uploadResult = await cloudinary.uploader.upload(incomingQr, {
+            folder: 'bitcashs_uploads',
+            resource_type: 'auto'
+          });
+          uploadedQr = uploadResult.secure_url;
+          console.log(`☁️ [CLOUDINARY QR UPLOAD SUCCESS] Secure URL: ${uploadedQr}`);
+        } catch (cErr) {
+          console.error(`☁️ [CLOUDINARY QR UPLOAD ERROR]:`, cErr.message);
+          uploadedQr = await uploadToCloudinary(incomingQr, 'bitcashs_uploads');
+        }
+      }
+      config.qrCodeUrl = uploadedQr;
+      config.treasuryQrCode = uploadedQr;
+      console.log(`🖼️ [TREASURY QR UPDATED] Stored Cloudinary URL: ${uploadedQr}`);
+    }
+
     if (globalTradeOutcome) {
       config.globalTradeOutcome = globalTradeOutcome.toUpperCase() === 'WIN' ? 'WIN' : 'LOSS';
       inMemoryGlobalTradeOutcome = config.globalTradeOutcome;
@@ -1505,11 +1546,14 @@ app.post(['/api/admin/settings', '/api/admin/trade-settings'], async (req, res) 
     config.withdrawFee = 0;
     await config.save();
 
-    console.log(`⚙️ [ADMIN SETTINGS] Global Trade Outcome: ${config.globalTradeOutcome}, Revenue: $${config.platformTotalEarnings}, Deposit Fee: 0%, Withdraw Fee: 0%`);
+    console.log(`⚙️ [ADMIN SETTINGS] TRC20 Address: ${config.trc20Address}, QR URL: ${config.qrCodeUrl || 'Default'}`);
     res.json({
       success: true,
-      message: 'Platform settings saved successfully!',
-      treasuryAddress: config.treasuryAddress,
+      message: 'Platform and wallet settings saved successfully!',
+      trc20Address: config.trc20Address || config.treasuryAddress,
+      treasuryAddress: config.treasuryAddress || config.trc20Address,
+      qrCodeUrl: config.qrCodeUrl || config.treasuryQrCode || '',
+      treasuryQrCode: config.treasuryQrCode || config.qrCodeUrl || '',
       depositFee: 0,
       withdrawFee: 0,
       platformTotalEarnings: config.platformTotalEarnings || 0,
@@ -2380,6 +2424,11 @@ app.get(['/api/user/wallet', '/api/wallet/data', '/api/wallet/summary'], async (
     // Sort by date descending
     allTx.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
+    let sysConfig = null;
+    try { sysConfig = await SystemSettings.findOne({ key: 'global_config' }); } catch (e) { }
+    const currentTreasuryAddress = sysConfig?.trc20Address || sysConfig?.treasuryAddress || 'TRBuYjnRoj9jM3WheB2k4X1t3SdxsYGr2j';
+    const currentTreasuryQrCode = sysConfig?.qrCodeUrl || sysConfig?.treasuryQrCode || '';
+
     res.json({
       success: true,
       balance: balance,
@@ -2395,7 +2444,10 @@ app.get(['/api/user/wallet', '/api/wallet/data', '/api/wallet/summary'], async (
         latestActivePlan: (user.activePlans && user.activePlans.length > 0) ? user.activePlans[user.activePlans.length - 1] : null,
         totalInvestedUsd: user.totalInvested || 0,
         totalDepositedUsd: totalDepositsSum,
-        trc20Address: 'TRBuYjnRoj9jM3WheB2k4X1t3SdxsYGr2j'
+        trc20Address: currentTreasuryAddress,
+        treasuryAddress: currentTreasuryAddress,
+        qrCodeUrl: currentTreasuryQrCode,
+        trc20QrCode: currentTreasuryQrCode
       },
       assets: [
         { name: 'Tether', symbol: 'USDT', balance: balance, inOrder: 0.00, usdValue: balance, btcValue: btcVal, icon: '₮' },
